@@ -1,10 +1,11 @@
 import { Component,HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthRoutingModule } from "../../auth/auth-routing.module";
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AuthRoutingModule],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
