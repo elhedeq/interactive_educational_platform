@@ -25,20 +25,20 @@
 
       </ul>
 
-      <div class="authBtn text-capitalize">
-        <button class="login btn text-gray rounded rounded-pill px-4   bg-white "> login</button>
-        <button class="signup btn text-white rounded rounded-pill px-4  ms-2 bg-primary-main  ">signup</button>
+      <div class="authBtn text-capitalize" *ngIf="authService.currentUser() === null">
+        <button class="login btn text-gray rounded rounded-pill px-4   bg-white " routerLink="login"> login</button>
+        <button class="signup btn text-white rounded rounded-pill px-4  ms-2 bg-primary-main  " routerLink="signup">signup</button>
       </div>
 
-      <div class="userprofileImg m-md-3 d-none">
+      <div class="userprofileImg m-md-3" *ngIf="authService.currentUser()">
        <div class="dropdown">
         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <img src="../../../assets/avatar (1).jpg" class="rounded rounded-circle" alt="user profile image" >
           </a>
-        <ul class="dropdown-menu text-capitalize">
+        <ul class="dropdown-menu text-capitalize profile-dropdown" [class.show]="isProfileMenueOpen">
           <li class="dropdown-item"> profile</li>
           <li class="dropdown-item"> setting</li>
-
+          <li class="dropdown-item" (click)="logout()"> logout</li>
         </ul>
 
        </div>

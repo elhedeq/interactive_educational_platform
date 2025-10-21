@@ -1,15 +1,18 @@
 import { Component,HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthRoutingModule } from "../../auth/auth-routing.module";
+import { AuthService } from '../../services/auth.service';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [CommonModule, AuthRoutingModule],
   templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.css'
+  styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
+  authService = inject(AuthService);
 
   // menue of user profile if we going to open or close it
   isProfileMenueOpen=false
@@ -29,6 +32,8 @@ export class NavbarComponent {
    this.isProfileMenueOpen=false
   }
 
-
+  logout(){
+    this.authService.logout();
+  }
 
 }

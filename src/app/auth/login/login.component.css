@@ -1,0 +1,66 @@
+.login-banner {
+    background-color: var(--primary-color);
+    border-radius: 5vh;
+}
+
+.login-nav {
+    width: fit-content;
+    border-radius: 50vh;
+    background-color: var(--secondary-color);
+}
+
+.login-nav button, form button {
+    background-color: transparent;
+    border: none;
+    border-radius: 50vh;
+    color: white;
+    padding: 10px 50px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+.login-nav button.active, .login-nav button:hover , form button{
+    background-color: var(--primary-color);
+}
+
+form button {
+    width: 50%;
+    background-color: var(--secondary-color);
+    text-transform: capitalize;
+}
+
+form button:hover {
+    background-color: var(--primary-color);
+}
+
+.login-input {
+    border-radius: 50vh;
+    outline: 1px solid var(--primary-color);
+    padding: 10px 20px;
+}
+
+.forgot-password {
+    color: black;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+}
+
+.forgot-password:hover {
+    color: var(--primary-color);
+}
+
+.rememberme {
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.rememberme label, .rememberme input {
+    cursor: pointer;
+}
+
+@media (max-width: 500px) {
+    form button {
+        padding-left: 1vw !important;
+        padding-right: 1vw !important;
+    }
+}

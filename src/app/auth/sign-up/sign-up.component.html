@@ -1,1 +1,42 @@
-<p>sign-up works!</p>
+<div class="grid m-5">
+    <div class="row">
+        <div class="col signup-banner text-white d-flex flex-column justify-content-end ms-4 me-4">
+            <div class="container p-5">
+                <h2>Lorem Impsum is simply</h2>
+                <p>Lorem Ipsum is semply</p>
+            </div>
+        </div>
+        <div class="col ms-4 me-4">
+            <div class="container p-5">
+                <div class="d-flex flex-column justify-content-center align-items-center">
+                    <p class="text-center">Welcom to lorem..!</p>
+                    <div class="signup-nav d-flex justify-content-center m-4 p-3">
+                        <button (click)="gotoLogin()">login</button>
+                        <button class="active">signup</button>
+                    </div>
+                </div>
+                <p class="text-secondary mt-4 mb-4">Lorem impsum is simply dummy text of the printing and typesetting industry.</p>
+                <form [formGroup]="signupForm" class="mt-5 mb-5" (ngSubmit)="onSubmit()">
+                    <div class="text-danger">
+                        {{errorMessage}}
+                    </div>
+                    <div class="form-group mt-4 mb-4">
+                        <label for="email" class="mt-3 mb-3">Email Address</label>
+                        <input type="email" class="form-control signup-input" formControlName="email" name="email" id="email" placeholder="Enter your Email Address">
+                    </div>
+                    <div class="form-group mt-4 mb-4">
+                        <label for="username" class="mt-3 mb-3">User name</label>
+                        <input type="text" class="form-control signup-input" formControlName="username" name="username" id="username" placeholder="Enter your User name">
+                    </div>
+                    <div class="form-group mt-4 mb-4">
+                        <label for="password" class="mt-3 mb-3">Password</label>
+                        <input type="password" class="form-control signup-input" formControlName="password" name="password" id="password" placeholder="Enter your Password">
+                    </div>
+                    <div class="form-group d-flex justify-content-end mt-4 mb-4">
+                        <button type="submit" class="btn btn-primary pd-5">register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

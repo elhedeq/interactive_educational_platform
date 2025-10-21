@@ -4,3 +4,12 @@
 .bg-primarycolor{
   background-color: var(--primary-color);
 }
+
+.profile-dropdown li{
+  cursor: pointer;
+}
+
+.profile-dropdown li:hover{
+  background-color: var(--primary-color);
+  color: white;
+}

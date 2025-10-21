@@ -1,0 +1,47 @@
+.signup-banner {
+    background-color: var(--primary-color);
+    border-radius: 5vh;
+}
+
+.signup-nav {
+    width: fit-content;
+    border-radius: 50vh;
+    background-color: var(--secondary-color)
+}
+
+.signup-nav button, form button {
+    background-color: transparent;
+    border: none;
+    border-radius: 50vh;
+    color: white;
+    padding: 10px 50px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+.signup-nav button.active, .signup-nav button:hover , form button{
+    background-color: var(--primary-color);
+}
+
+form button {
+    width: 50%;
+    background-color: var(--secondary-color);
+    text-transform: capitalize;
+}
+
+form button:hover {
+    background-color: var(--primary-color);
+}
+
+.signup-input {
+    border-radius: 50vh;
+    outline: 1px solid var(--primary-color);
+    padding: 10px 20px;
+}
+
+@media (max-width: 500px) {
+    form button {
+        padding-left: 1vw !important;
+        padding-right: 1vw !important;
+    }
+}

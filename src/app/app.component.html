@@ -3,11 +3,11 @@
 <main class="main">
 
 
-<app-navbar></app-navbar>
+<app-navbar *ngIf="showNavBar"></app-navbar>
 
 <router-outlet></router-outlet>
 
-<app-footer></app-footer>
+<app-footer *ngIf="showFooter"></app-footer>
 
 </main>
 
