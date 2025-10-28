@@ -5,6 +5,7 @@ import { HomeComponent } from './features/home/home.component';
 import { LoginComponent } from './auth/login/login.component';
 import { SignUpComponent } from './auth/sign-up/sign-up.component';
 import { Sign } from 'crypto';
+import { InstructorDashboardComponent } from './features/instructor-dashboard/instructor-dashboard.component';
 
 export const routes: Routes = [
    {path:"home" ,component:HomeComponent },
@@ -12,4 +13,14 @@ export const routes: Routes = [
     {path:"" ,redirectTo:"home" ,pathMatch:'full'},
     {path:"login" ,component:LoginComponent},
     {path:"signup" ,component:SignUpComponent},
+    {
+        path:"instructor",
+        component: InstructorDashboardComponent,
+        children: [
+            { path: '', component: InstructorDashboardComponent },
+            { path: 'create', component: InstructorDashboardComponent },
+            { path: 'quizzes', component: InstructorDashboardComponent },
+            { path: 'projects', component: InstructorDashboardComponent }
+        ]
+    },
 ];
