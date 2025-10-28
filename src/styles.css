@@ -144,7 +144,7 @@ white-space: nowrap;
   color: #696984;
   font-size: 1rem;
 }
-.all-sections p{
+.all-sections p ,.feature-content p{
     color: #696984;
 
 }
@@ -226,6 +226,22 @@ white-space: nowrap;
 .overlay-btn:hover{
   background-color:rgba(35, 189, 238, 0.9) ;
 }
+/* ////////////////////// */
+.feature-content h2{
+  color: var(--subtitle-color);
+  span{
+    color: var(--second-subtitle-color);
+  }
+
+}
+.right-feature h3{
+  color: var(--subtitle-color);
+  span{
+    color: var(--second-subtitle-color);
+  }
+
+}
+
 
 
 
