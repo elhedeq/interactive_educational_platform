@@ -1,1 +1,55 @@
-<p>course-details works!</p>
+<section class="course-info py-5">
+  <div class="container bg-white rounded-4 p-5 shadow-sm">
+    <div class="row align-items-center">
+      <div class="col-md-5">
+        <img [src]="course.img" class="img-fluid rounded-4" alt="{{ course.title }}">
+      </div>
+
+      <div class="col-md-7">
+        <h2 class="fw-bold mb-3">{{ course.title }}</h2>
+        <p class="text-muted mb-4">{{ course.description }}</p>
+
+        <ul class="list-unstyled mb-4">
+          <li><strong>Category:</strong> {{ course.category }}</li>
+          <li><strong>Instructor:</strong> {{ course.teacher }}</li>
+          <li><strong>Rating:</strong> ★ {{ course.rating }}</li>
+          <li><strong>Duration:</strong> {{ course.duration }}</li>
+          <li><strong>Lessons:</strong> {{ course.lessons }}</li>
+        </ul>
+
+        <button class="btn btn-success px-5 py-2 fw-semibold rounded-3">
+          Enroll Now
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 🔹 Info Section -->
+<section class="info-section py-5">
+  <div class="container bg-white rounded-4 p-5 shadow-sm position-relative">
+    <div class="row align-items-center">
+      
+      <!-- 🔹 الجزء النصي -->
+      <div class="col-md-7 position-relative">
+        <div class="dot-shape"></div> <!-- النقطتين هنا -->
+        <h2 class="fw-bold mb-3 mt-4">
+          <span class="text-dark">Everything you can do in a physical classroom,</span><br>
+          <span class="text-success">you can do with TOTC</span>
+        </h2>
+        <p class="text-muted">
+          TOTC’s school management software helps traditional and online schools manage scheduling,
+          attendance, payments and virtual classrooms all in one secure cloud-based system.
+        </p>
+      </div>
+
+      <!-- 🔹 الصورة -->
+      <div class="col-md-5 text-center position-relative">
+        <img src="../../../assets/classroom.jpg" alt="Classroom"
+             class="img-fluid rounded-4 shadow-sm decorated-image">
+        <div class="corner-shape top-left"></div>
+        <div class="corner-shape bottom-right"></div>
+      </div>
+    </div>
+  </div>
+</section>

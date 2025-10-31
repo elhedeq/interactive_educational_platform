@@ -1,0 +1,81 @@
+:host {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  color: #222;
+}
+
+/* 🔹 Course Info Section */
+.course-info {
+  background-color: #f8fbff;
+}
+
+.course-info img {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+ul li {
+  margin-bottom: 0.5rem;
+}
+
+button:hover {
+  background-color: #157347;
+}
+
+/* 🔹 Info Section Styling */
+/* 🔹 الخلفية العامة */
+.info-section {
+  background-color: #eef6ff; /* لبني فاتح */
+}
+
+.info-section h2 span.text-success {
+  color: #00b894; /* الأخضر المينت */
+}
+
+.info-section p {
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* 🔹 الصورة */
+.decorated-image {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
+}
+
+/* 🔹 الزوايا الخضراء */
+.corner-shape {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 4px solid #00b894;
+  z-index: 1;
+}
+
+.corner-shape.top-left {
+  top: -15px;
+  left: -15px;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 12px;
+}
+
+.corner-shape.bottom-right {
+  bottom: -15px;
+  right: -15px;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 12px;
+}
+
+/* 🔹 النقطتين بجانب الكلام */
+.dot-shape {
+  position: absolute;
+  top: 0;
+  left: -30px; /* حركيها حسب مكان الكلام */
+  width: 14px;
+  height: 14px;
+  background-color: #00b894;
+  border-radius: 50%;
+  box-shadow: 22px 0 0 #00b894; /* نقطتين جنب بعض */
+}
