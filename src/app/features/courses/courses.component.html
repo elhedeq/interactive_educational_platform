@@ -3,7 +3,7 @@
   <div class="container bg-white rounded-4 p-5 shadow-sm">
     <h2 class="text-center mb-5 fw-bold">Choice favourite course from top category</h2>
     <div class="row g-4">
-      <div class="col-6 col-md-3" *ngFor="let cat of ['Arts and Humanities', 'Computer Science', 'Business', 'Data Science', 'Marketing' ,'Math and Logic','Language Learning' ,'Social Science']">
+      <div class="col-6 col-md-3" *ngFor="let cat of ['Arts and Humanities', 'Computer Science', 'Business', 'Data Science', 'Marketing', 'Math and Logic', 'Language Learning', 'Social Science']">
         <div class="category-card text-center p-4 rounded-4 shadow-sm"
              (click)="filterByCategory(cat)" style="cursor:pointer;">
           <h5 class="fw-bold">{{ cat }}</h5>
@@ -20,7 +20,6 @@
       <h2 class="fw-bold">
         {{ selectedCategory ? selectedCategory + ' Courses' : 'All Courses' }}
       </h2>
-      <a href="#" class="text-success fw-semibold text-decoration-none" (click)="selectedCategory=''">See all</a>
     </div>
 
     <div class="row g-4">
@@ -38,6 +37,15 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- زرار عرض المزيد -->
+    <div class="text-center mt-4">
+      <button *ngIf="filteredCourses.length < courses.length"
+              class="btn btn-outline-success px-4 py-2 rounded-3 fw-semibold"
+              (click)="showMoreCourses()">
+        See more
+      </button>
     </div>
   </div>
 </section>
