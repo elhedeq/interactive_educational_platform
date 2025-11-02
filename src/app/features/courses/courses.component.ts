@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router'; // ✅ أضفنا دا
 
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule], // ✅ أضفنا RouterModule هنا
   templateUrl: './courses.component.html',
   styleUrls: ['./courses.component.css']
 })
@@ -12,11 +13,11 @@ export class CoursesComponent {
   selectedCategory: string = '';
 
   courses = [
-    { title: 'Leadership & Management', category: 'Business', teacher: 'Ahmed', rating: 4.7, date: '2025-09-10', img: '../../../assets/leader course.jpg' },
-    { title: 'Front-End Web Development', category: 'Computer Science', teacher: 'Sara', rating: 4.9, date: '2025-09-20', img: '../../../assets/front course.webp' },
-    { title: 'Marketing Strategies', category: 'Marketing', teacher: 'Laila', rating: 4.6, date: '2025-10-01', img: '../../../assets/marketing course.webp' },
-    { title: 'Data Science Basics', category: 'Data Science', teacher: 'Omar', rating: 4.8, date: '2025-10-05', img: '../../../assets/data course.webp' },
-    { title: 'Art History', category: 'Arts and Humanities', teacher: 'Nora', rating: 4.3, date: '2025-08-28', img: '../../../assets/art course.webp' },
+    { id: 1, title: 'Leadership & Management', category: 'Business', teacher: 'Ahmed', rating: 4.7, date: '2025-09-10', img: '../../../assets/leader course.jpg' },
+    { id: 2, title: 'Front-End Web Development', category: 'Computer Science', teacher: 'Sara', rating: 4.9, date: '2025-09-20', img: '../../../assets/front course.webp' },
+    { id: 3, title: 'Marketing Strategies', category: 'Marketing', teacher: 'Laila', rating: 4.6, date: '2025-10-01', img: '../../../assets/marketing course.webp' },
+    { id: 4, title: 'Data Science Basics', category: 'Data Science', teacher: 'Omar', rating: 4.8, date: '2025-10-05', img: '../../../assets/data course.webp' },
+    { id: 5, title: 'Art History', category: 'Arts and Humanities', teacher: 'Nora', rating: 4.3, date: '2025-08-28', img: '../../../assets/art course.webp' },
   ];
 
   filterByCategory(catName: string) {
@@ -34,5 +35,9 @@ export class CoursesComponent {
 
   get newCourses() {
     return this.courses.sort((a, b) => Date.parse(b.date) - Date.parse(a.date)).slice(0, 3);
+  }
+
+  showMoreCourses() {
+    // ممكن نعملها بعدين لما نضيف pagination أو lazy loading
   }
 }
