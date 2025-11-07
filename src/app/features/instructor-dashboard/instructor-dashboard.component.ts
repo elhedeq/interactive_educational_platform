@@ -11,10 +11,5 @@ import { RouterModule } from '@angular/router';
   styleUrl: './instructor-dashboard.component.css'
 })
 export class InstructorDashboardComponent {
-  sidebarOpen = false;
-
-  toggleSidebar() {
-    this.sidebarOpen = !this.sidebarOpen;
-  }
   
 }

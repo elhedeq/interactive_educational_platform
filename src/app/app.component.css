@@ -4,3 +4,7 @@
 .bg-primarycolor{
   background-color: var(--primary-color);
 }
+
+main {
+  padding-top: 15vh;
+}

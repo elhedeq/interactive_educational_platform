@@ -8,11 +8,12 @@ import { FooterComponent } from './core/footer/footer.component';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 import { onAuthStateChanged } from 'firebase/auth';
+import { SidebarComponent } from "./core/sidebar/sidebar.component";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet,RouterModule, NavbarComponent,FooterComponent, CommonModule],
+  imports: [RouterOutlet, RouterModule, NavbarComponent, FooterComponent, CommonModule, SidebarComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -21,6 +22,7 @@ export class AppComponent implements OnInit{
 
   showNavBar: boolean = true;
   showFooter: boolean = true;
+  showSidebar: boolean = false;
   authService = inject(AuthService);
 
   constructor(private router: Router) {
@@ -30,8 +32,8 @@ export class AppComponent implements OnInit{
       )
       .subscribe(() => {
         const currentUrl = this.router.routerState.root.firstChild?.snapshot.url[0]?.path;
-        this.showNavBar = !(currentUrl === 'login' || currentUrl === 'signup');
-        this.showFooter = !(currentUrl === 'login' || currentUrl === 'signup');
+        this.showFooter = !(currentUrl === 'login' || currentUrl === 'signup' || currentUrl === 'instructor');
+        this.showSidebar = !(currentUrl === 'instructor');
       });
   }
 

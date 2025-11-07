@@ -1,9 +1,10 @@
 
 
-<main class="main">
 
 
 <app-navbar *ngIf="showNavBar"></app-navbar>
+<main class="main">
+<app-sidebar *ngIf="!showSidebar"></app-sidebar>
 
 <router-outlet></router-outlet>
 

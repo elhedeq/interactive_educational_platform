@@ -1,47 +1,5 @@
 <div class="wrapper row">
-    <div class="col-sm-3">
-        <button [ngClass]="{'open': sidebarOpen}" class="sidebar-toggle btn d-lg-none" (click)="toggleSidebar()"><i class="fa-solid fa-chevron-right"></i></button>
-        <div class="d-lg-block h-100" [ngClass]="{open:sidebarOpen}" id="sidebar">
-            <nav class="sidebar d-flex justify-content-start flex-column p-4 h-100">
-                <div class="sidebar-header">
-                    <h3 class="text-capitalize text-white">instructor dashboard</h3>
-                </div>
-                <div class="sidebar-content d-flex flex-column justify-content-start mt-5 mb-5">
-                    <ul class="list-group">
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active" 
-                            [routerLinkActiveOptions]="{ exact: true }">
-                            <a routerLink="/instructor">
-                                <i class="fa-solid fa-lines-leaning"></i>
-                                my courses
-                            </a>
-                        </li>
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
-                            [routerLinkActiveOptions]="{exact: true}">
-                            <a routerLink="/instructor/create">
-                                <i class="fa-solid fa-plus"></i>
-                                create course
-                            </a>
-                        </li>
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
-                            [routerLinkActiveOptions]="{exact: true}">
-                            <a routerLink="/instructor/quizzes">
-                                <i class="fa-solid fa-clipboard-question"></i>
-                                quizzes
-                            </a>
-                        </li>
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
-                            [routerLinkActiveOptions]="{exact: true}">
-                            <a routerLink="/instructor/projects">
-                                <i class="fa-solid fa-diagram-project"></i>
-                                projects
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        </div>
-    </div>
-    <div class="col p-4 w-100">
+    <div class="col p-4 pr-1 w-100">
         <div class="course row">
             <div class="col-sm-6">
                 <div class="card-body">
