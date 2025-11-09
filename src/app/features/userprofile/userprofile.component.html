@@ -1,0 +1,39 @@
+
+
+<section class="profile my-5 pt-5">
+  <div class="container">
+     <div class="profile-info row d-flex align-items-center justify-content-center">
+      <div class="col-lg-4 col-md-5 col-sm-12">
+        <div class="user-info d-flex align-items-center justify-content-between flex-column">
+          <div class="img">
+            <img src="../../../assets/images/profile-img.jpg"  alt="user profile image">
+          </div>
+          <div class="info d-flex align-items-center justify-content-center my-4  flex-column">
+            <h4>Seif Mohamed</h4>
+            <span>129,El-Nasr Street, Cairo</span>
+
+
+          </div>
+          <div class="personal-info mt-3  d-flex align-items-start justify-content-between flex-column text-capitalize ">
+            <a class="userinfo  text-decoration-none d-flex align-items-center justify-content-start" routerLink='personal-info' >
+             <i class="fa-regular fa-user mx-3"></i> Personal information
+            </a>
+            <a class="pass-manage text-decoration-none d-flex align-items-center justify-content-start" routerLink='password'><i class="fa-solid fa-lock mx-3"></i> Password management</a>
+            <button (click)="logout()"  class="logout d-flex align-items-center justify-content-start mt-3"> <i class="fa-solid fa-arrow-right-from-bracket mx-3"></i> Log out</button>
+          </div>
+
+        </div>
+      </div>
+      <div class="col-lg-8 col-md-7 col-sm-12">
+        <div class="user-data">
+          <router-outlet></router-outlet>
+
+        </div>
+      </div>
+
+  </div>
+
+  </div>
+
+</section>
+

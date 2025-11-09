@@ -1,0 +1,59 @@
+.checkout-container {
+display: flex;
+gap: 30px;
+margin: 40px 0;
+flex-wrap: wrap;
+}
+
+
+.payment-box {
+width: 60%;
+background: #ffffff;
+padding: 30px;
+border-radius: 12px;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+
+.card-types {
+display: flex;
+gap: 15px;
+margin-bottom: 20px;
+}
+
+
+.card-types img {
+width: 60px;
+height: auto;
+}
+
+
+.payment-box input {
+width: 100%;
+padding: 12px;
+margin: 10px 0;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 15px;
+transition: .2s;
+}
+
+
+.payment-box input:focus {
+border-color: #4bb7ac;
+box-shadow: 0 0 6px rgba(75, 183, 172, 0.5);
+outline: none;
+}
+
+
+.row {
+display: flex;
+gap: 12px;
+}
+
+
+.confirm-btn {
+width: 100%;
+background: #4bb7ac;
+padding: 14px;
+}

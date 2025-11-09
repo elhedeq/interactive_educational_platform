@@ -1,0 +1,48 @@
+.user-info{
+  background-color: #F5F6F7;
+  border-radius: 13px;
+  padding: 32px;
+
+}
+
+.user-info img{
+  width:113px;
+  height: 113px;
+  border-radius: 56.5px;
+  border: 2px;
+  padding: 6px 0;
+
+}
+.info h4{
+  font-size: 20px;
+  color: var(--secondary-doc-color);
+  font-family: var(--main-doc-font);
+}
+.info span{
+  color:var(--main-doc-color);
+  font-family: var(--second-font);
+}
+
+.personal-info a ,.personal-info button{
+  color:var(--main-doc-col) ;
+  height:48px;
+  border-radius: 8px;
+  font-family: var(--second-font);
+  cursor: pointer;
+  display: inline-block;
+  padding: Right 100px Left 12px;
+  width: 100%;
+  white-space: nowrap;
+  transition: all 0.5s ease;
+}
+.personal-info a:focus{
+  border-radius: 8px;
+  outline: 1px solid #145DB8;
+
+}
+.logout{
+  color: #FC4B4E !important;
+  border:none;
+  background-color: none;
+
+}
