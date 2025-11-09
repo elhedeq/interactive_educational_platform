@@ -7,6 +7,7 @@ import { LoginComponent } from './auth/login/login.component';
 import { SignUpComponent } from './auth/sign-up/sign-up.component';
 import { Sign } from 'crypto';
 import { InstructorDashboardComponent } from './features/instructor-dashboard/instructor-dashboard.component';
+import { checkoutComponent } from './features/checkout/checkout.component';
 
 export const routes: Routes = [
    {path:"home" ,component:HomeComponent },
@@ -15,6 +16,7 @@ export const routes: Routes = [
     {path:"" ,redirectTo:"home" ,pathMatch:'full'},
     {path:"login" ,component:LoginComponent},
     {path:"signup" ,component:SignUpComponent},
+    {path:"checkout",component:checkoutComponent},
     {
         path:"instructor",
         component: InstructorDashboardComponent,

@@ -1,0 +1,79 @@
+<div class="wrap">
+  <div class="panel">
+    <section class="form-card">
+      <h2>Payment Details</h2>
+      <p class="lead">Enter your card details below or use PayPal checkout.</p>
+
+      <div class="card-preview">
+        <div class="left">
+          <div>{{ cardName || 'Cardholder Name' }}</div>
+          <div>{{ cardNumber || '•••• •••• •••• ••••' }}</div>
+        </div>
+        <div class="right">
+          <div>{{ exp || 'MM/YY' }}</div>
+          <div style="opacity:0.9">{{ cvc || 'CVC' }}</div>
+        </div>
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #paymentForm="ngForm">
+        <label for="name">Cardholder Name</label>
+        <input type="text" id="name" [(ngModel)]="cardName" name="cardName" required />
+
+        <label for="cardNumber">Card Number</label>
+        <input
+          type="tel"
+          id="cardNumber"
+          [(ngModel)]="cardNumber"
+          name="cardNumber"
+          maxlength="19"
+          (input)="cardNumber = formatCardNumber(cardNumber)"
+          required
+        />
+
+        <div class="row">
+          <div class="col">
+            <label for="exp">Expiration</label>
+            <input
+              type="text"
+              id="exp"
+              [(ngModel)]="exp"
+              name="exp"
+              maxlength="5"
+              (input)="exp = formatExp(exp)"
+              required
+            />
+          </div>
+          <div class="col">
+            <label for="cvc">CVC</label>
+            <input type="tel" id="cvc" [(ngModel)]="cvc" name="cvc" maxlength="4" required />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Pay Now</button>
+          <button type="button" class="btn btn-ghost" (click)="clearForm()">Clear</button>
+        </div>
+      </form>
+
+      <div id="paypal-button-container" style="margin-top: 20px;"></div>
+    </section>
+
+    <aside class="summary">
+      <h3>Your Courses</h3>
+      <div class="course" *ngFor="let c of demoCourses">
+        <div style="flex:1">
+          <div style="font-weight:600">{{ c.title }}</div>
+          <div class="small">{{ c.hours }} hours</div>
+        </div>
+        <div style="text-align:left">
+          <div class="pill">\${{ c.price.toFixed(2) }}</div>
+        </div>
+      </div>
+
+      <div class="total">
+        <div>Total</div>
+        <div>\${{ total.toFixed(2) }}</div>
+      </div>
+    </aside>
+  </div>
+</div>
