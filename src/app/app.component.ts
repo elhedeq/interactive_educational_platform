@@ -8,11 +8,12 @@ import { FooterComponent } from './core/footer/footer.component';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 import { onAuthStateChanged } from 'firebase/auth';
+import { SidebarComponent } from './core/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet,RouterModule, NavbarComponent,FooterComponent, CommonModule],
+  imports: [RouterOutlet,RouterModule, NavbarComponent,FooterComponent, SidebarComponent,CommonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
