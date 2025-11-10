@@ -19,7 +19,9 @@
              <i class="fa-regular fa-user mx-3"></i> Personal information
             </a>
             <a class="pass-manage text-decoration-none d-flex align-items-center justify-content-start" routerLink='password'><i class="fa-solid fa-lock mx-3"></i> Password management</a>
-            <button (click)="logout()"  class="logout d-flex align-items-center justify-content-start mt-3"> <i class="fa-solid fa-arrow-right-from-bracket mx-3"></i> Log out</button>
+            <a class="user-courses text-decoration-none d-flex align-items-center justify-content-start" routerLink='mycourses'><i class="fa-solid fa-book-open-reader mx-3"></i> My Courses </a>
+
+            <button (click)="logout()"  class="logout d-flex align-items-center justify-content-start mt-3" routerLink='login'> <i class="fa-solid fa-arrow-right-from-bracket mx-3"></i> Log out</button>
           </div>
 
         </div>
