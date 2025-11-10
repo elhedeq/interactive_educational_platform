@@ -9,6 +9,10 @@ import { Sign } from 'crypto';
 import { InstructorDashboardComponent } from './features/instructor-dashboard/instructor-dashboard.component';
 import { CheckoutComponent } from './features/checkout/checkout.component';
 import { UserprofileComponent } from './features/userprofile/userprofile.component';
+import path from 'path';
+import { Component } from '@angular/core';
+import { UserinformationComponent } from './features/userprofile/userinformation/userinformation.component';
+import { UsercoursesComponent } from './features/userprofile/usercourses/usercourses.component';
 
 export const routes: Routes = [
    {path:"home" ,component:HomeComponent },
@@ -28,6 +32,12 @@ export const routes: Routes = [
             { path: 'projects', component: InstructorDashboardComponent }
         ]
     },
-    {path:"userprofile",component:UserprofileComponent}
+    {path:"userprofile",component:UserprofileComponent,
+      children:[
+        {path:"personal-info" ,component:UserinformationComponent},
+        {path:"mycourses",component:UsercoursesComponent}
+      ]
+
+    }
 
 ];
