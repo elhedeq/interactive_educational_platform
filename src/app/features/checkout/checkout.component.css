@@ -46,14 +46,38 @@ outline: none;
 }
 
 
-.row {
-display: flex;
-gap: 12px;
-}
+
 
 
 .confirm-btn {
 width: 100%;
-background: #4bb7ac;
+background: #49BBBD;
 padding: 14px;
+border-radius: 12px;
+height: 63px;
+border:none;
+color: white;
+margin: 20px 0;
+}
+
+.summary-box{
+  background-color: #9DCCFF;
+  border-radius: 20px;
+}
+.card-content{
+    box-shadow: 0 18.83px 47.08px rgb(47, 50, 125,0.16);
+      border-radius: 20px;
+
+
+
+}
+.card-content label{
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+.totals span{
+   color: #5B5B5B;
+}
+.sale{
+  background-color: #49BBBD;
 }

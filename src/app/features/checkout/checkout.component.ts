@@ -12,13 +12,15 @@ styleUrls: ['./checkout.component.css'],
 imports: [FormsModule, CommonModule],
 })
 export class CheckoutComponent {
-summary = [
-{ title: 'Lorem ipsum dolor sit amet', price: '$24.69', image: 'assets/img1.jpg' },
-{ title: 'Second item description', price: '$24.69', image: 'assets/img2.jpg' },
-];
+        summary = [
+        { title: 'Lorem ipsum dolor sit amet', price: '$24.69', image: '../../../assets/confident-teacher-explaining-lesson-pupils 1.png' },
+        { title: 'Second item description', price: '$24.69', image: '../../../assets/confident-teacher-explaining-lesson-pupils 1.png' },
+        ];
 
 
-confirmPayment() {
-console.log('Payment Confirmed!');
-}
+        confirmPayment() {
+        console.log('Payment Confirmed!');
+        }
+
+        
 }
