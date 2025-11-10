@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { AuthRoutingModule } from "../../auth/auth-routing.module";
-import {router}
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-userprofile',
   standalone: true,
-  imports: [AuthRoutingModule],
+  imports: [AuthRoutingModule,RouterModule],
   templateUrl: './userprofile.component.html',
   styleUrl: './userprofile.component.css'
 })

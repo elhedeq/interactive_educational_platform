@@ -28,6 +28,6 @@ export const routes: Routes = [
             { path: 'projects', component: InstructorDashboardComponent }
         ]
     },
-    {path:'profile',component:UserprofileComponent}
+    {path:"userprofile",component:UserprofileComponent}
 
 ];

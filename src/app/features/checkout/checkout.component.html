@@ -1,51 +1,122 @@
-<div class="checkout-container">
-<img src="assets/visa.png" alt="Visa" />
-<img src="assets/mastercard.png" alt="MasterCard" />
-</div>
+<section class="chekout my-5">
+  <div class="container">
+    <div class="checkout-contnet row d-flex align-items-center justify-content-center">
+      <div class="col-md-7">
+        <div class="card-content p-3 my-5">
+          <div class="checkout-container">
+            <img src="../../../assets/visa.png"  alt="Visa" />
+            <img src="../../../assets/Paypal.png" alt="paypal" />
+            </div>
 
 
-<!-- Form -->
-<form (ngSubmit)="confirmPayment()" #paymentForm="ngForm">
-<input type="text" name="name" ngModel placeholder="Name on Card" required />
+            <!-- Form -->
+            <form (ngSubmit)="confirmPayment()" #paymentForm="ngForm">
+              <label for="name">Name on Card</label>
+            <input type="text" id="name" name="name" ngModel placeholder="Name on Card" class="form-control" required />
+
+             <label for="card-num">Card Number</label>
+            <input type="text" id="card-num" name="card" ngModel maxlength="16" placeholder="Card Number" class="form-control" required />
 
 
-<input type="text" name="card" ngModel maxlength="16" placeholder="Card Number" required />
+            <div class="row my-5 d-flex align-items-center justify-content-between">
+              <div class="col-md-6">
+                 <label for="ex-date">Expiration Date ( MM/YY )</label>
+                 <input type="month" id="ex-date" name="exp" ngModel required  class="form-control"/>
+
+              </div>
+              <div class="col-md-6">
+                <label for="cvc">Enter CVC</label>
+                <input type="text" name="cvc" id="cvc" ngModel maxlength="3" class="form-control" placeholder="Enter CVC" required />
 
 
-<input type="text" name="cardnum" ngModel maxlength="16" placeholder="Enter Card Number" required />
+              </div>
+
+             </div>
+             <div class="check-box ">
+              <input type="checkbox"  name="saveData" id="saving-data">
+              <label for="saving-data" class="ms-2">Save my information for faster checkout</label>
+             </div>
 
 
-<div class="row">
-<input type="month" name="exp" ngModel required />
-<input type="text" name="cvc" ngModel maxlength="3" placeholder="Enter CVC" required />
-</div>
+            <button type="submit" class="confirm-btn ">Confirm Payment</button>
+            </form>
+
+        </div>
 
 
-<button type="submit" class="confirm-btn">Confirm Payment</button>
-</form>
+      </div>
+
+
+      <div class="col-md-5">
+         <div class="summary-box p-3 my-5">
+            <h3>Summary</h3>
+
+
+            <div class="d-flex align-items-center justify-content-start gap-4" *ngFor="let item of summary">
+                  <img [src]="item.image" class="my-1" />
+                  <div class="d-flex align-items-start justify-content-start flex-column">
+                  <p>{{ item.title }}</p>
+                  <span>{{ item.price }}</span>
+
+                  </div>
+
+
+            </div>
 
 
 
-<!-- Summary -->
-<div class="summary-box">
-<h3>Summary</h3>
+            <div class="totals mt-3">
+            <div class="d-flex align-items-start justify-content-between"><span>Subtotal</span> <span>$51.38</span></div>
+             <hr />
+            <div class="d-flex align-items-start justify-content-between"><span>Coupon Discount</span> <span>$0</span></div>
+             <hr />
+            <div class="d-flex align-items-start justify-content-between"><span>TAX</span> <span>$4.20</span></div>
+
+            <hr />
+            <div class="total text-black d-flex align-items-start justify-content-between"><span class="text-black">Total</span> <span class="text-black">$55.58</span></div>
+            </div>
+           </div>
+      </div>
 
 
-<div class="item-row" *ngFor="let item of summary">
-<img [src]="item.image" />
-<div>
-<p>{{ item.title }}</p>
-<span>{{ item.price }}</span>
-</div>
-</div>
+
+    </div>
 
 
-<div class="totals">
-<div><span>Subtotal</span> <span>$51.38</span></div>
-<div><span>Coupon Discount</span> <span>$0</span></div>
-<div><span>TAX</span> <span>$4.20</span></div>
-<hr />
-<div class="total"><span>Total</span> <span>$55.58</span></div>
-</div>
-</div>
+
+    <div class="top-education my-5">
+      <h3 class="mb-5">Top Education offers and deals are listed here </h3>
+
+      <div class="top-content row">
+        <div class="col-md-4">
+          <div class="course-top position-relative">
+            <img src="../../../assets/top educations.png" class="img-fluid" alt="education offers">
+            <div class="top-details position-absolute top-0 start-0 end-0 h-100">
+
+              <div class="overlay text-white d-flex align-items-start justify-content-start p-5 flex-column">
+                <div class="sale fw-bold align-self-start  my-4 text-center p-4 rounded-2">
+                50%
+              </div>
+                <h4 >Lorem ipsum dolor</h4>
+                <span>Lorem ipsum dolor sit amet, consectetur adipising elit, sed do eiusmod tempor</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+
+      </div>
+    </div>
+
+
+
+  </div>
+
+
+
+
+</section>
+
 
