@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Routes } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -9,6 +9,17 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 import { onAuthStateChanged } from 'firebase/auth';
 import { SidebarComponent } from './core/sidebar/sidebar.component';
+import { LoginComponent } from './auth/login/login.component';
+import { SignUpComponent } from './auth/sign-up/sign-up.component';
+import { CheckoutComponent } from './features/checkout/checkout.component';
+import { CourseDetailsComponent } from './features/course-details/course-details.component';
+import { CoursesComponent } from './features/courses/courses.component';
+import { HomeComponent } from './features/home/home.component';
+import { InstructorDashboardComponent } from './features/instructor-dashboard/instructor-dashboard.component';
+import { UsercoursesComponent } from './features/userprofile/usercourses/usercourses.component';
+import { UserinformationComponent } from './features/userprofile/userinformation/userinformation.component';
+import { UserprofileComponent } from './features/userprofile/userprofile.component';
+import { ViewFullCourseComponent } from './features/view-full-course/view-full-course.component';
 
 @Component({
   selector: 'app-root',
@@ -55,3 +66,33 @@ ngOnInit(): void {
   console.log(this.authService.currentUser());
 }
 }
+
+export const routes: Routes = [
+    { path: "home", component: HomeComponent },
+    { path: "courses", component: CoursesComponent },
+    { path: "course-details/:id", component: CourseDetailsComponent },
+    { path: "", redirectTo: "home", pathMatch: 'full' },
+    { path: "login", component: LoginComponent },
+    { path: "signup", component: SignUpComponent },
+    { path: "checkout/:id", component: CheckoutComponent },
+    { path: "view-full-course/:id", component: ViewFullCourseComponent },
+
+    {
+        path: "instructor",
+        component: InstructorDashboardComponent,
+        children: [
+            { path: 'create', component: InstructorDashboardComponent },
+            { path: 'quizzes', component: InstructorDashboardComponent },
+            { path: 'projects', component: InstructorDashboardComponent }
+        ]
+    },
+
+    {
+        path: "userprofile",
+        component: UserprofileComponent,
+        children: [
+            { path: "personal-info", component: UserinformationComponent },
+            { path: "mycourses", component: UsercoursesComponent }
+        ]
+    }
+];
