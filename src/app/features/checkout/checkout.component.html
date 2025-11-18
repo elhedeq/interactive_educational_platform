@@ -40,24 +40,24 @@
       <div class="col-md-5">
          <div class="summary-box p-3 my-5">
             <h3>Summary</h3>
-            <div class="d-flex align-items-center justify-content-start gap-4" *ngFor="let item of summary">
+            <div class="d-flex align-items-center justify-content-start gap-4">
                   <div class="course-img-wrapper">
-                    <img [src]="item.image" alt="{{ item.title }}" class="course-img my-1" />
+                    <img [src]="summary.thumbnail" alt="{{ summary.title }}" class="course-img my-1" />
                   </div>
                   <div class="d-flex align-items-start justify-content-start flex-column">
-                    <p>{{ item.title }}</p>
-                    <span>{{ item.price }}</span>
+                    <p>{{ summary.title }}</p>
+                    <span>{{ summary.price }}</span>
                   </div>
             </div>
 
             <div class="totals mt-3">
-              <div class="d-flex align-items-start justify-content-between"><span>Subtotal</span> <span>$51.38</span></div>
+              <div class="d-flex align-items-start justify-content-between"><span>Subtotal</span> <span>{{summary.price}}</span></div>
               <hr />
-              <div class="d-flex align-items-start justify-content-between"><span>Coupon Discount</span> <span>$0</span></div>
+              <div class="d-flex align-items-start justify-content-between"><span>Coupon Discount</span> <span>{{discount}}</span></div>
               <hr />
-              <div class="d-flex align-items-start justify-content-between"><span>TAX</span> <span>$4.20</span></div>
+              <div class="d-flex align-items-start justify-content-between"><span>TAX</span> <span>{{tax}}</span></div>
               <hr />
-              <div class="total text-black d-flex align-items-start justify-content-between"><span class="text-black">Total</span> <span class="text-black">$55.58</span></div>
+              <div class="total text-black d-flex align-items-start justify-content-between"><span class="text-black">Total</span> <span class="text-black">{{total()}}</span></div>
             </div>
          </div>
       </div>

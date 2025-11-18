@@ -25,7 +25,7 @@ class Course extends mySQL_ORM{
     public function getCourses(){
         $this->select(
             $this->table, 
-            '*',
+            'courses.*',
             '', '', '', '', 
             'users', 
             'courses.author = users.id', 
@@ -40,17 +40,27 @@ class Course extends mySQL_ORM{
      * @return array associative array of the course's data (single row)
      */
     public function getCourse($courseId){
+        // 1. Get basic course info
         $this->select(
             $this->table,
-            '*',
-            'id = :id',
+            'courses.*',
+            'courses.id = :id',
             '', '', '',
             'users',
             'courses.author = users.id',
             'users.first_name AS instructor_first_name, users.last_name AS instructor_last_name',
             ['id' => $courseId]
         );
-        return $this->fetch();
+        $course = $this->fetch();
+
+        if ($course) {
+            // 2. Aggregate related content
+            $course['lessons'] = $this->getLessons($courseId);
+            $course['quizzes'] = $this->getQuizzes($courseId);
+            $course['projects'] = $this->getProject($courseId);
+        }
+
+        return $course;
     }
 
     /**
@@ -87,7 +97,7 @@ class Course extends mySQL_ORM{
      * @return array an array of all matched courses
      */
     public function searchCourses($keyword) {
-        $this->select($this->table, '*', "name LIKE :keyword OR description LIKE :keyword", '', '', '', '', '', '', ['keyword' => "%$keyword%"]);
+        $this->select($this->table, 'courses.*', "courses.name LIKE :keyword OR courses.description LIKE :keyword", '', '', '', '', '', '', ['keyword' => "%$keyword%"]);
         return $this->fetchAll();
     }
 
@@ -411,6 +421,17 @@ class Course extends mySQL_ORM{
         $where = 'question = :qid AND student = :sid';
         $params = ['qid' => $questionId, 'sid' => $studentId];
         return $this->delete('answers', $where, $params);
+    }
+
+    public function getCourseIdByQuizId($quizId) {
+        $this->select('quizzes', 'course', 'id = :qid', '', '', '', '', '', '', ['qid' => $quizId]);
+        $result = $this->fetch();
+        return $result ? $result['course'] : null;
+    }
+
+    public function getQuestionsForQuiz($quizId) {
+        $this->select('questions', '*', 'quiz = :qid', '', '', 'question_order ASC', '', '', '', ['qid' => $quizId]);
+        return $this->fetchAll();
     }
 }
 

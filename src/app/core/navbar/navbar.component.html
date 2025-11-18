@@ -25,7 +25,7 @@
 
       </ul>
 
-      <div class="authBtn text-capitalize" *ngIf="authService.currentUser() === null">
+      <div class="authBtn text-capitalize" *ngIf="!authService.currentUser()">
         <button class="login btn text-gray rounded rounded-pill px-4   bg-white " routerLink="login"> login</button>
         <button class="signup btn text-white rounded rounded-pill px-4  ms-2 bg-primary-main  " routerLink="signup">signup</button>
       </div>
@@ -36,7 +36,7 @@
             <img src="../../../assets/avatar (1).jpg" class="rounded rounded-circle" alt="user profile image" >
           </a>
         <ul class="dropdown-menu text-capitalize profile-dropdown" [class.show]="isProfileMenueOpen">
-          <li class="dropdown-item"> profile</li>
+          <li class="dropdown-item" (click)="gotoProfile()"> profile</li>
           <li class="dropdown-item"> setting</li>
           <li class="dropdown-item" (click)="logout()"> logout</li>
         </ul>

@@ -4,19 +4,17 @@
       
       <!-- صورة الكورس -->
       <div class="col-md-5">
-        <img [src]="course.img" class="img-fluid rounded-4" alt="{{ course.title }}">
+        <img [src]="course.thumbnail" class="img-fluid rounded-4" alt="{{ course.name }}">
       </div>
 
       <!-- تفاصيل الكورس -->
       <div class="col-md-7">
-        <h2 class="fw-bold mb-3">{{ course.title }}</h2>
+        <h2 class="fw-bold mb-3">{{ course.name }}</h2>
         <p class="text-muted mb-4">{{ course.description }}</p>
 
         <ul class="list-unstyled mb-4">
           <li><strong>Category:</strong> {{ course.category }}</li>
-          <li><strong>Instructor:</strong> {{ course.teacher }}</li>
-          <li><strong>Rating:</strong> ★ {{ course.rating }}</li>
-          <li><strong>Duration:</strong> {{ course.duration }}</li>
+          <li><strong>Instructor:</strong> {{ course.instructor_first_name + ' ' + course.instructor_last_name }}</li>
           <li><strong>Lessons:</strong> {{ course.lessons }}</li>
         </ul>
 

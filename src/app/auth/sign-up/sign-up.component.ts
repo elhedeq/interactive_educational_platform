@@ -14,13 +14,14 @@ import { AuthService } from '../../services/auth.service';
 export class SignUpComponent {
   constructor(private router: Router) {}
 
-  fb = inject(FormBuilder)
-  http = inject(HttpClient)
+  fb = inject(FormBuilder);
+  http = inject(HttpClient);
   authService = inject(AuthService);
   errorMessage: string | null = null;
 
   signupForm = this.fb.nonNullable.group({
-    username: ['', Validators.required],
+    first_name: ['', Validators.required],
+    last_name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
@@ -31,13 +32,20 @@ export class SignUpComponent {
 
   onSubmit() {
     const formData = this.signupForm.getRawValue();
-    this.authService.register(formData.email, formData.username, formData.password)
-    .subscribe({
-      next: () => {
+    this.http.post('http://localhost/backend/api.php/users', {
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email,
+      password: formData.password
+    }).subscribe({
+      next:(response: any) => {
+      localStorage.setItem('token', response.token);
+      this.authService.currentUser.set(response.user);
       this.router.navigate(['/home']);
-      },
+    },
       error: (err) => {
-        this.errorMessage = err.code;
+        console.error('Sign-up error:', err);
+        this.errorMessage = 'Error during sign-up. Please try again.';
       }
     });
   }

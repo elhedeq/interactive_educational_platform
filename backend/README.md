@@ -1,1250 +1,440 @@
-# E-Learning Platform API
+# API README
 
-A comprehensive RESTful API for managing online courses, quizzes, submissions, and user accounts with role-based access control.
-
-## Table of Contents
-- [Overview](#overview)
-- [Authentication](#authentication)
-- [User Roles](#user-roles)
-- [User CRUD Endpoints](#user-crud-endpoints)
-- [Course Endpoints](#course-endpoints)
-- [Quiz & Question Endpoints](#quiz--question-endpoints)
-- [Submission Endpoints](#submission-endpoints)
-- [Subscription Endpoints](#subscription-endpoints)
-- [HTTP Status Codes](#http-status-codes)
-- [API Testing](#api-testing)
+This document explains authentication, available endpoints, expected request and response shapes, error codes, and curl examples for the PHP API implemented in api.txt.
 
 ---
 
-## Overview
-
-The E-Learning Platform API provides a complete solution for:
-- **User Management**: Create, read, update, delete user accounts with role-based access
-- **Course Management**: Create and manage online courses with lessons, quizzes, and projects
-- **Quiz System**: Build quizzes with questions, track student progress and answers
-- **Project Submissions**: Students submit projects, instructors grade and provide feedback
-- **Enrollment**: Students subscribe to courses and track their progress
-
-**Base URL**: `http://localhost/api/`
-
-All responses are in JSON format with appropriate HTTP status codes.
+### Summary of Authentication
+- Authentication uses JWT tokens passed in the HTTP Authorization header as:
+  Authorization: Bearer <JWT_TOKEN>
+- The helper function getAuthUser extracts and verifies the JWT via User::verifyJWT and returns the user record (including fields **id** and **credential**).
+- Credential levels:
+  - **0** = Student (basic registered user)
+  - **1** = Instructor
+  - **2** = Admin
+- Authorization checks are enforced by checkAuth(requiredLevel, authUser) and additional ownership checks where applicable.
 
 ---
 
-## Authentication
+## Common Response and Error Codes
+- **200 OK** — Request succeeded, returns JSON payload.
+- **201 Created** — Resource created, returns confirmation and new id.
+- **400 Bad Request** — Missing or invalid request data.
+- **401 Unauthorized** — Authentication required or token missing/invalid.
+- **403 Forbidden** — Authenticated but insufficient privileges or not owner.
+- **404 Not Found** — Resource not found.
+- **409 Conflict** — Resource conflict (for example, email already registered).
+- **500 Internal Server Error** — Server-side error or operation failed.
 
-### Authorization Header Format
-All protected endpoints require the `Authorization` header:
-```
-Authorization: Bearer <USER_ID>
-```
+All responses are JSON objects. Error responses use the shape:
+{ "error": "message" }
+Success messages often use:
+{ "message": "text" } or { "id": number } or combined.
 
-**Example**:
+---
+
+## How to send requests
+- Content-Type: application/json for request bodies.
+- Include Authorization header for endpoints that require authentication.
+- Use appropriate HTTP method: GET, POST, PUT, DELETE.
+- For PUT/DELETE that receive a JSON body, the API uses php://input JSON.
+
+---
+
+# Endpoints
+
+Note: Replace base URL with your API host, for example http://example.com/api.php or http://example.com/.
+
+---
+
+### Login
+- Path: POST /login
+- Purpose: Authenticate user and receive JWT and user details.
+- Auth: None
+- Request body JSON
+  - required: **email**, **password**
+- Success response 200:
+  - JSON from User::login (typically includes success, token, user info)
+- Errors: 400 missing fields, 401 invalid credentials
+- Example
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/users/5
+curl -X POST https://api.example.com/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"secret"}'
 ```
-
-### CORS Headers
-The API includes CORS headers for cross-origin requests:
-- `Access-Control-Allow-Origin: *`
-- `Access-Control-Allow-Methods: GET, POST, PUT, DELETE`
-- `Access-Control-Allow-Headers: Content-Type, Authorization`
 
 ---
 
-## User Roles
-
-The API uses a credential-based system with three roles:
-
-| Role | Level | Permissions |
-|------|-------|-------------|
-| **Student** | 0 | View own profile, enroll in courses, submit answers/projects, view course content |
-| **Instructor** | 1 | All student permissions + create courses, manage own course content, grade submissions |
-| **Admin** | 2 | Full access to all resources, manage all users and content |
-
----
-
-## User CRUD Endpoints
-
-### 1. GET /users/{id}
-**Get a specific user's profile**
-
-**Authentication**: Required  
-**Authorization**: 
-- Users can view their own profile
-- Instructors/Admins can view any profile
-
-**Parameters**:
-- `id` (integer, URL parameter): User ID
-
-**Response** (200 OK):
-```json
-{
-  "id": 1,
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "john@example.com",
-  "bio": "Computer Science Student",
-  "avatar": "profile.jpg",
-  "credential": 0
-}
-```
-
-**Error Responses**:
-- `401` - Unauthorized: No authentication token
-- `403` - Forbidden: Insufficient permissions
-- `404` - Not Found: User doesn't exist
-
-**cURL Example**:
+### Current Authenticated User
+- Path: GET /users/me
+- Purpose: Retrieve authenticated user object
+- Auth: JWT required (credential 0+)
+- Success response 200: user object
+- Errors: 401 unauthenticated
+- Example
 ```bash
-curl -H "Authorization: Bearer 1" http://localhost/api/users/1
+curl -X GET https://api.example.com/users/me \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
 ---
 
-### 2. GET /users
-**Get all users (Instructors/Admins only)**
-
-**Authentication**: Required  
-**Authorization**: Instructors (credential 1+) only
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": 1,
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com",
-    "bio": "Computer Science Student",
-    "avatar": "profile.jpg",
-    "credential": 0
-  },
-  {
-    "id": 2,
-    "first_name": "Jane",
-    "last_name": "Smith",
-    "email": "jane@example.com",
-    "bio": "Math Instructor",
-    "avatar": "jane.jpg",
-    "credential": 1
-  }
-]
-```
-
-**Error Responses**:
-- `401` - Unauthorized: No authentication token
-- `403` - Forbidden: Only instructors/admins can view user lists
-
-**cURL Example**:
+### Users CRUD
+- POST /users
+  - Create new user (registration)
+  - Public, but if credential is provided only admin can set it
+  - Required fields: first_name, last_name, email, password
+  - Password minimum length 6
+  - Responses: 201/200 with login result; 400 validation; 409 email exists
+  - Example
 ```bash
-curl -H "Authorization: Bearer 2" http://localhost/api/users
+curl -X POST https://api.example.com/users \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"Ali","last_name":"Khan","email":"ali@example.com","password":"secret"}'
 ```
 
----
-
-### 3. POST /users
-**Create a new user**
-
-**Authentication**: Optional
-- Unauthenticated: Creates student account (credential 0)
-- Authenticated: Admin required to set custom credential levels
-
-**Request Body**:
-```json
-{
-  "first_name": "Alice",
-  "last_name": "Johnson",
-  "email": "alice@example.com",
-  "bio": "New Student",
-  "avatar": "alice.jpg",
-  "credential": 0
-}
-```
-
-**Required Fields**:
-- `first_name` - String: Letters, numbers, spaces, dashes, underscores only
-- `last_name` - String: Letters, numbers, spaces, dashes, underscores only
-- `email` - String: Valid email address
-
-**Optional Fields**:
-- `bio` - String: User biography
-- `avatar` - String: Avatar filename/path
-- `credential` - Integer: 0, 1, or 2 (Admin only; defaults to 0)
-
-**Response** (201 Created):
-```json
-{
-  "message": "User created successfully.",
-  "id": 5
-}
-```
-
-**Error Responses**:
-- `400` - Bad Request: Missing required fields or invalid format
-- `409` - Conflict: Email already registered
-- `403` - Forbidden: Non-admin trying to set credential level
-- `500` - Internal Server Error: Database error
-
-**cURL Examples**:
+- GET /users
+  - Get list of users
+  - Auth: Instructor or Admin (credential >= 1)
+  - Response: 200 users array; 403 if not permitted
+  - Example
 ```bash
-# Public registration (student)
-curl -X POST http://localhost/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "first_name": "Alice",
-    "last_name": "Johnson",
-    "email": "alice@example.com",
-    "bio": "New Student"
-  }'
-
-# Admin creating instructor
-curl -X POST http://localhost/api/users \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "first_name": "Bob",
-    "last_name": "Teacher",
-    "email": "bob@example.com",
-    "credential": 1
-  }'
+curl -X GET https://api.example.com/users \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-### 4. PUT /users/{id}
-**Update a user's profile**
-
-**Authentication**: Required  
-**Authorization**:
-- Users can edit their own profile
-- Admins can edit any profile
-
-**Parameters**:
-- `id` (integer, URL parameter): User ID to update
-
-**Request Body** (all fields optional):
-```json
-{
-  "first_name": "Jonathan",
-  "last_name": "Doe",
-  "email": "jon@example.com",
-  "bio": "Updated bio",
-  "avatar": "newavatar.jpg"
-}
-```
-
-**Field Validation**:
-- `first_name` & `last_name`: Letters, numbers, spaces, dashes, underscores only
-- `email`: Must be unique across system
-- `credential`: Non-admins cannot change their own
-
-**Response** (200 OK):
-```json
-{
-  "message": "User updated successfully."
-}
-```
-
-**Error Responses**:
-- `400` - Bad Request: Invalid format or no changes
-- `401` - Unauthorized: No authentication token
-- `403` - Forbidden: Insufficient permissions or trying to change credential
-- `404` - Not Found: User doesn't exist
-- `409` - Conflict: Email already in use
-
-**cURL Examples**:
+- GET /users/{id}
+  - Get a specific user
+  - Auth: Any authenticated user can fetch own profile; Instructor/Admin can fetch any
+  - Errors: 403 if trying to access other profile without privileges
+  - Example
 ```bash
-# User updating own bio
-curl -X PUT http://localhost/api/users/1 \
-  -H "Authorization: Bearer 1" \
-  -H "Content-Type: application/json" \
-  -d '{"bio": "Updated bio"}'
-
-# Admin promoting user to instructor
-curl -X PUT http://localhost/api/users/3 \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"credential": 1}'
+curl -X GET https://api.example.com/users/5 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-### 5. DELETE /users/{id}
-**Delete a user account**
-
-**Authentication**: Required  
-**Authorization**: Admin only (credential 2)
-
-**Parameters**:
-- `id` (integer, URL parameter): User ID to delete
-
-**Response** (200 OK):
-```json
-{
-  "message": "User deleted successfully."
-}
-```
-
-**Error Responses**:
-- `400` - Bad Request: Attempting to delete own account
-- `401` - Unauthorized: No authentication token
-- `403` - Forbidden: Only admins can delete users
-- `404` - Not Found: User doesn't exist
-- `500` - Internal Server Error: Database error
-
-**cURL Example**:
+- PUT /users/{id}
+  - Update user
+  - Auth: Owner or Admin
+  - Fields validated (name format, unique email)
+  - 403 if non-admin attempts to change credential
+  - Example
 ```bash
-curl -X DELETE http://localhost/api/users/5 \
-  -H "Authorization: Bearer 2"
+curl -X PUT https://api.example.com/users/5 \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"Mohamed","email":"m@example.com"}'
 ```
 
----
-
-## Course Endpoints
-
-### GET /courses
-**Get all courses (Public)**
-
-**Authentication**: Not required
-
-**Query Parameters**:
-- `search` (optional): Search keyword for course title/description
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": 1,
-    "title": "Introduction to PHP",
-    "description": "Learn PHP basics",
-    "author": 2,
-    "created_at": "2024-01-15"
-  }
-]
-```
-
-**cURL Example**:
+- DELETE /users/{id}
+  - Delete user
+  - Auth: Owner or Admin
+  - Response: 200 success or 404/403
+  - Example
 ```bash
-curl http://localhost/api/courses
-curl http://localhost/api/courses?search=PHP
+curl -X DELETE https://api.example.com/users/5 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
 ---
 
-### GET /courses/{id}
-**Get course details**
-
-**Authentication**: Not required
-
-**Response** (200 OK):
-```json
-{
-  "id": 1,
-  "title": "Introduction to PHP",
-  "description": "Learn PHP basics",
-  "author": 2,
-  "created_at": "2024-01-15"
-}
-```
-
-**cURL Example**:
+### Courses
+- GET /courses
+  - Public listing of courses
+  - Optional: GET /courses?search=keyword for search
+  - Response 200 list
+  - Example
 ```bash
-curl http://localhost/api/courses/1
+curl -X GET "https://api.example.com/courses"
 ```
 
----
-
-### GET /courses/{id}/lessons
-**Get all lessons in a course**
-
-**Authentication**: Required  
-**Authorization**: Must be enrolled, author, or admin
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": 1,
-    "course": 1,
-    "title": "PHP Basics",
-    "content": "..."
-  }
-]
-```
-
-**cURL Example**:
+- GET /courses/{id}
+  - Requires authentication and either: admin, course author, or enrolled student
+  - Response 200 course details or 401/403/404
+  - Example
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/courses/1/lessons
+curl -X GET https://api.example.com/courses/12 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-### GET /courses/{id}/quizzes
-**Get all quizzes in a course**
-
-**Authentication**: Required  
-**Authorization**: Must be enrolled, author, or admin
-
-**cURL Example**:
+- GET /courses/{id}/preview
+  - Public preview endpoint returning only basic course info (safe for public use)
+  - Response 200 preview object
+  - Example
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/courses/1/quizzes
+curl -X GET https://api.example.com/courses/12/preview
 ```
 
----
-
-### GET /courses/{id}/project
-**Get course project**
-
-**Authentication**: Required  
-**Authorization**: Must be enrolled, author, or admin
-
-**cURL Example**:
+- POST /courses
+  - Create new course
+  - Auth: Instructor (credential >= 1)
+  - Request body: course fields (courseService expects an array)
+  - Sets author = authenticated user id
+  - Response: 201 { message, id } or 403
+  - Example
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/courses/1/project
+curl -X POST https://api.example.com/courses \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Intro to PHP","description":"...","price":0}'
 ```
 
----
-
-### GET /courses/{id}/students
-**Get enrolled students (Author/Admin only)**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": 3,
-    "first_name": "Alice",
-    "last_name": "Smith",
-    "email": "alice@example.com",
-    "enrolled_at": "2024-02-01"
-  }
-]
-```
-
-**cURL Example**:
+- PUT /courses/{id}
+  - Update course
+  - Auth: Author or Admin
+  - Response: 200 success or 403/404
+  - Example
 ```bash
-curl -H "Authorization: Bearer 2" http://localhost/api/courses/1/students
+curl -X PUT https://api.example.com/courses/12 \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"description":"Updated description"}'
 ```
 
----
-
-### POST /courses
-**Create a new course**
-
-**Authentication**: Required  
-**Authorization**: Instructor (credential 1+) only
-
-**Request Body**:
-```json
-{
-  "title": "Advanced JavaScript",
-  "description": "Master modern JavaScript"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Course created successfully.",
-  "id": 5
-}
-```
-
-**cURL Example**:
+- DELETE /courses/{id}
+  - Delete course
+  - Auth: Author or Admin
+  - Example
 ```bash
-curl -X POST http://localhost/api/courses \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Advanced JavaScript", "description": "Master JS"}'
+curl -X DELETE https://api.example.com/courses/12 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
 ---
 
-### POST /courses/{id}/lessons
-**Add lesson to course**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Request Body**:
-```json
-{
-  "title": "Lesson Title",
-  "content": "Lesson content here"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Lessons created successfully.",
-  "id": 1
-}
-```
-
----
-
-### POST /courses/{id}/quizzes
-**Add quiz to course**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Request Body**:
-```json
-{
-  "title": "Quiz 1",
-  "description": "Assessment quiz"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Quizzes created successfully.",
-  "id": 1
-}
-```
-
----
-
-### POST /courses/{id}/project
-**Add project to course**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Request Body**:
-```json
-{
-  "title": "Final Project",
-  "description": "Build a web app",
-  "due_date": "2024-05-01"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Project created successfully.",
-  "id": 1
-}
-```
-
----
-
-### PUT /lessons/{id}
-**Update lesson**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Request Body**:
-```json
-{
-  "title": "Updated Title",
-  "content": "Updated content"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "message": "Lessons updated successfully."
-}
-```
-
----
-
-### DELETE /lessons/{id}
-**Delete lesson**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Response** (200 OK):
-```json
-{
-  "message": "Lessons deleted successfully."
-}
-```
-
----
-
-## Quiz & Question Endpoints
-
-### GET /quizzes/{id}/questions
-**Get all questions in a quiz**
-
-**Authentication**: Required  
-**Authorization**: Enrolled student, author, or admin
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": 1,
-    "quiz": 1,
-    "text": "What is PHP?",
-    "question_type": "multiple_choice"
-  }
-]
-```
-
-**cURL Example**:
+### Course Components
+- POST /courses/{courseId}/lessons
+- POST /courses/{courseId}/quizzes
+- POST /courses/{courseId}/project
+  - Create component for a course
+  - Auth: Instructor and must be course author (Admin bypass)
+  - Body: component fields plus course id is added automatically
+  - Example
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/quizzes/1/questions
+curl -X POST https://api.example.com/courses/12/lessons \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Lesson 1","content":"..."}'
 ```
 
----
-
-### GET /quizzes/{id}/questions/progress/{studentId}
-**Get student's quiz progress**
-
-**Authentication**: Required  
-**Authorization**: Student (self only), author, or admin
-
-**Response** (200 OK):
-```json
-{
-  "quiz_id": 1,
-  "student_id": 5,
-  "total_questions": 10,
-  "answered": 8,
-  "score": 75
-}
-```
-
-**cURL Example**:
+- PUT or DELETE /courses/{courseId}/{componentType}/{componentId}
+  - Update or remove component (lessons, quizzes, project)
+  - Auth: Instructor and owner (or Admin)
+  - Example update
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/quizzes/1/questions/progress/5
+curl -X PUT https://api.example.com/courses/12/lessons/34 \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Updated lesson"}'
 ```
 
----
-
-### POST /quizzes/{id}/questions
-**Add question to quiz**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Request Body**:
-```json
-{
-  "text": "What is PHP?",
-  "question_type": "multiple_choice",
-  "options": ["Server-side language", "CSS framework", "Database"],
-  "correct_answer": 0
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Question created successfully.",
-  "id": 1
-}
-```
-
----
-
-### PUT /questions/{id}
-**Update question**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Request Body**:
-```json
-{
-  "text": "Updated question text",
-  "correct_answer": 1
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "message": "Question updated successfully."
-}
-```
-
----
-
-### DELETE /questions/{id}
-**Delete question**
-
-**Authentication**: Required  
-**Authorization**: Course author or admin only
-
-**Response** (200 OK):
-```json
-{
-  "message": "Question deleted successfully."
-}
-```
-
----
-
-### POST /questions/{id}/answer
-**Submit answer to question**
-
-**Authentication**: Required  
-**Authorization**: Enrolled student or higher
-
-**Request Body**:
-```json
-{
-  "answer_text": "Server-side language"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Answer submitted successfully.",
-  "id": 1
-}
-```
-
-**cURL Example**:
+- GET /courses/{id}/lessons or /quizzes or /project
+  - Retrieve specific course components
+  - Auth: enrolled student, author, or admin
+  - Example
 ```bash
-curl -X POST http://localhost/api/questions/1/answer \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"answer_text": "Server-side language"}'
+curl -X GET https://api.example.com/courses/12/lessons \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-### PUT /questions/{id}/answer
-**Update answer or grade (instructor)**
-
-**Authentication**: Required  
-**Authorization**: Student (own answer) or instructor/admin (grading)
-
-**Request Body** (Student):
-```json
-{
-  "answer_text": "Updated answer"
-}
-```
-
-**Request Body** (Instructor Grading):
-```json
-{
-  "grade": 10,
-  "comment": "Excellent answer!",
-  "student_id": 5
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "message": "Answer updated successfully."
-}
-```
-
----
-
-### DELETE /questions/{id}/answer
-**Delete answer**
-
-**Authentication**: Required  
-**Authorization**: Student (own), or admin
-
-**Request Body** (Optional - Admin deleting other's answer):
-```json
-{
-  "student_id": 5
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "message": "Answer deleted successfully."
-}
-```
-
----
-
-## Submission Endpoints
-
-### GET /submissions/{projectId}
-**Get submissions for a project**
-
-**Authentication**: Required  
-**Authorization**: Student, instructor, or admin
-
-**Response** (200 OK):
-```json
-[
-  {
-    "student_id": 5,
-    "project_id": 1,
-    "content": "Project code...",
-    "submitted_at": "2024-04-15",
-    "grade": null,
-    "comment": null
-  }
-]
-```
-
-**cURL Example**:
+- GET /courses/{id}/students
+  - Returns enrolled students
+  - Auth: Course author or Admin
+  - Example
 ```bash
-curl -H "Authorization: Bearer 5" http://localhost/api/submissions/1
+curl -X GET https://api.example.com/courses/12/students \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-### POST /submissions/{projectId}
-**Submit project**
-
-**Authentication**: Required  
-**Authorization**: Enrolled student or higher
-
-**Request Body**:
-```json
-{
-  "content": "Project submission content here",
-  "file_url": "submissions/project_123.zip"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Submission created successfully.",
-  "id": 1
-}
-```
-
-**cURL Example**:
+- GET /courses/{id}/related
+  - Returns other courses from the same instructor
+  - Example
 ```bash
-curl -X POST http://localhost/api/submissions/1 \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "My project submission"}'
+curl -X GET https://api.example.com/courses/12/related
 ```
 
 ---
 
-### PUT /submissions/{projectId}
-**Update submission or grade it**
-
-**Authentication**: Required  
-**Authorization**: Student (self) or instructor/admin (grading)
-
-**Request Body** (Student Resubmission):
-```json
-{
-  "content": "Updated submission"
-}
-```
-
-**Request Body** (Instructor Grading):
-```json
-{
-  "grade": 90,
-  "comment": "Great work!",
-  "student_id": 5
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "message": "Submission updated successfully."
-}
-```
-
-**cURL Example**:
+### Quizzes and Questions
+- GET /quizzes/{quizId}/questions
+  - Auth: authenticated user who is enrolled, author, or admin
+  - Returns questions for the quiz
+  - Example
 ```bash
-# Student resubmitting
-curl -X PUT http://localhost/api/submissions/1 \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "Updated submission"}'
-
-# Instructor grading
-curl -X PUT http://localhost/api/submissions/1 \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"grade": 90, "comment": "Great!", "student_id": 5}'
+curl -X GET https://api.example.com/quizzes/8/questions \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-### DELETE /submissions/{projectId}
-**Delete submission**
-
-**Authentication**: Required  
-**Authorization**: Student (self), admin
-
-**Response** (200 OK):
-```json
-{
-  "message": "Submission deleted successfully."
-}
-```
-
-**cURL Example**:
+- GET /quizzes/{quizId}/questions/progress/{studentId}
+  - Auth: Instructor/Admin or student checking their own progress
+  - Example
 ```bash
-curl -X DELETE http://localhost/api/submissions/1 \
-  -H "Authorization: Bearer 5"
+curl -X GET https://api.example.com/quizzes/8/questions/progress/21 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
----
-
-## Subscription Endpoints
-
-### GET /subscriptions
-**Get user's course subscriptions**
-
-**Authentication**: Required  
-**Authorization**: User (self) or admin
-
-**Response** (200 OK):
-```json
-[
-  {
-    "id": 1,
-    "user_id": 5,
-    "course_id": 1,
-    "enrolled_at": "2024-02-01"
-  }
-]
-```
-
----
-
-### POST /subscriptions
-**Enroll in a course**
-
-**Authentication**: Required
-
-**Request Body**:
-```json
-{
-  "course_id": 1
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "message": "Subscription created successfully.",
-  "id": 1
-}
-```
-
----
-
-### DELETE /subscriptions/{courseId}
-**Unenroll from course**
-
-**Authentication**: Required  
-**Authorization**: Student (self) or admin
-
-**Response** (200 OK):
-```json
-{
-  "message": "Subscription deleted successfully."
-}
-```
-
----
-
-## HTTP Status Codes
-
-| Code | Meaning | Usage |
-|------|---------|-------|
-| **200** | OK | Successful GET, PUT, DELETE |
-| **201** | Created | Successful POST (resource created) |
-| **400** | Bad Request | Missing/invalid required fields |
-| **401** | Unauthorized | Missing authentication token |
-| **403** | Forbidden | Insufficient permissions for action |
-| **404** | Not Found | Resource doesn't exist |
-| **409** | Conflict | Email already exists, duplicate entry |
-| **500** | Server Error | Database or internal server error |
-
----
-
-## API Testing
-
-### Complete User Workflow Example
-
+- POST /quizzes/{quizId}/questions
+  - Create a question under a quiz
+  - Auth: Instructor who owns the quiz or Admin
+  - Example
 ```bash
-# 1. Create student account
-curl -X POST http://localhost/api/users \
+curl -X POST https://api.example.com/quizzes/8/questions \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{
-    "first_name": "Bob",
-    "last_name": "Student",
-    "email": "bob@example.com",
-    "bio": "New Student"
-  }'
-# Response: {"message": "User created successfully.", "id": 5}
-
-# 2. Get user profile
-curl -H "Authorization: Bearer 5" http://localhost/api/users/5
-
-# 3. Update profile
-curl -X PUT http://localhost/api/users/5 \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"bio": "Learning JavaScript"}'
-
-# 4. View available courses
-curl http://localhost/api/courses
-
-# 5. Enroll in course
-curl -X POST http://localhost/api/subscriptions \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"course_id": 1}'
-
-# 6. View course lessons
-curl -H "Authorization: Bearer 5" http://localhost/api/courses/1/lessons
-
-# 7. Submit quiz answer
-curl -X POST http://localhost/api/questions/1/answer \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"answer_text": "My answer"}'
-
-# 8. Submit project
-curl -X POST http://localhost/api/submissions/1 \
-  -H "Authorization: Bearer 5" \
-  -H "Content-Type: application/json" \
-  -d '{"content": "My project submission"}'
+  -d '{"text":"What is PHP?","type":"mcq","options":["A","B"],"answer":0}'
 ```
 
-### Complete Instructor Workflow Example
-
+- PUT /questions/{questionId}
+- DELETE /questions/{questionId}
+  - Update or delete question
+  - Auth: Instructor and must be course owner or Admin
+  - Example
 ```bash
-# 1. Create course
-curl -X POST http://localhost/api/courses \
-  -H "Authorization: Bearer 2" \
+curl -X PUT https://api.example.com/questions/45 \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "Web Development 101",
-    "description": "Learn web dev"
-  }'
-# Response: {"message": "Course created successfully.", "id": 1}
-
-# 2. Add lessons
-curl -X POST http://localhost/api/courses/1/lessons \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "HTML Basics", "content": "..."}'
-
-# 3. Add quiz
-curl -X POST http://localhost/api/courses/1/quizzes \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "HTML Quiz", "description": "Test your knowledge"}'
-
-# 4. Add quiz question
-curl -X POST http://localhost/api/quizzes/1/questions \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "What is HTML?", "options": ["Markup language", "Framework"], "correct_answer": 0}'
-
-# 5. View enrolled students
-curl -H "Authorization: Bearer 2" http://localhost/api/courses/1/students
-
-# 6. Grade student answer
-curl -X PUT http://localhost/api/questions/1/answer \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"grade": 10, "comment": "Excellent!", "student_id": 5}'
-
-# 7. Grade project submission
-curl -X PUT http://localhost/api/submissions/1 \
-  -H "Authorization: Bearer 2" \
-  -H "Content-Type: application/json" \
-  -d '{"grade": 90, "comment": "Great work!", "student_id": 5}'
+  -d '{"text":"Updated question text"}'
 ```
 
-### Admin User Management Example
+---
 
+### Question Answers
+- POST /questions/{questionId}/answer
+  - Student submits an answer
+  - Auth: enrolled student, author, or admin
+  - Body: answer data; student id is taken from the token
+  - Response 201 with new id
+  - Example
 ```bash
-# 1. Create instructor account
-curl -X POST http://localhost/api/users \
-  -H "Authorization: Bearer 1" \
+curl -X POST https://api.example.com/questions/45/answer \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{
-    "first_name": "Jane",
-    "last_name": "Teacher",
-    "email": "jane@example.com",
-    "credential": 1
-  }'
+  -d '{"response":"My answer text"}'
+```
 
-# 2. Get all users
-curl -H "Authorization: Bearer 1" http://localhost/api/users
-
-# 3. Update user
-curl -X PUT http://localhost/api/users/3 \
-  -H "Authorization: Bearer 1" \
+- PUT /questions/{questionId}/answer
+  - Two modes: student updates their answer, or instructor/admin grades an answer (grade/comment)
+  - Student mode: no grade/comment fields allowed
+  - Instructor grading: include student_id and grading fields; auth must be course author or Admin
+  - Example grading
+```bash
+curl -X PUT https://api.example.com/questions/45/answer \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"credential": 1}'
+  -d '{"student_id":21,"grade":95,"comment":"Good work"}'
+```
 
-# 4. Promote student to instructor
-curl -X PUT http://localhost/api/users/5 \
-  -H "Authorization: Bearer 1" \
+- DELETE /questions/{questionId}/answer
+  - Student deletes own answer or Admin deletes any (Admin may specify student_id)
+  - Example delete own
+```bash
+curl -X DELETE https://api.example.com/questions/45/answer \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+---
+
+### Subscriptions
+- POST /subscriptions
+  - Enroll in a course
+  - Auth: Registered user (credential 0+)
+  - Body: must include **course** (course id). Student is set to authenticated user.
+  - Example
+```bash
+curl -X POST https://api.example.com/subscriptions \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"credential": 1}'
+  -d '{"course":12}'
+```
 
-# 5. Delete user
-curl -X DELETE http://localhost/api/users/5 \
-  -H "Authorization: Bearer 1"
+- DELETE /subscriptions/{courseId}
+  - Un-enroll self from course
+  - Auth: Registered user
+  - Example
+```bash
+curl -X DELETE https://api.example.com/subscriptions/12 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+- DELETE /subscriptions/{courseId}/student/{studentId}
+  - Instructor can remove another student from their course (or Admin)
+  - Auth: Instructor and course owner or Admin
+  - Example
+```bash
+curl -X DELETE https://api.example.com/subscriptions/12/student/21 \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
 ---
 
-## Error Response Examples
-
-### Missing Required Fields (400)
-```json
-{
-  "error": "Missing required fields: first_name, last_name, email."
-}
+### Submissions
+- POST /submissions
+  - Create a project submission
+  - Auth: Registered user and must be enrolled in the associated course
+  - Body must include **project** (project id) and other submission fields (e.g., url)
+  - Example
+```bash
+curl -X POST https://api.example.com/submissions \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"project":7,"url":"https://github.com/user/repo"}'
 ```
 
-### Email Already Exists (409)
-```json
-{
-  "error": "Email already registered."
-}
+- PUT /submissions/{projectId}
+  - Two modes:
+    - Student re-submission: student updates their submission (cannot set grade/comment)
+    - Instructor grading: include student_id and grade/comment; instructor must be course owner or Admin
+  - Example student update
+```bash
+curl -X PUT https://api.example.com/submissions/7 \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com/user/new-repo"}'
+```
+  - Example instructor grading
+```bash
+curl -X PUT https://api.example.com/submissions/7 \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"student_id":21,"grade":88,"comment":"Nice improvements"}'
 ```
 
-### Unauthorized (401)
-```json
-{
-  "error": "Authentication required."
-}
+- DELETE /submissions/{projectId}
+  - Student deletes own submission; Admin can delete any via query param student_id
+  - Example student delete
+```bash
+curl -X DELETE "https://api.example.com/submissions/7" \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
-
-### Forbidden (403)
-```json
-{
-  "error": "Insufficient privileges. Required credential level: 1"
-}
-```
-
-### Not Found (404)
-```json
-{
-  "error": "User not found."
-}
-```
-
----
-
-## Database Tables
-
-### users
-- `id` (INT, PK)
-- `first_name` (VARCHAR)
-- `last_name` (VARCHAR)
-- `email` (VARCHAR, UNIQUE)
-- `bio` (TEXT)
-- `avatar` (VARCHAR)
-- `credential` (INT) - 0: Student, 1: Instructor, 2: Admin
-
-### courses
-- `id` (INT, PK)
-- `title` (VARCHAR)
-- `description` (TEXT)
-- `author` (INT, FK users.id)
-- `created_at` (TIMESTAMP)
-
-### lessons
-- `id` (INT, PK)
-- `course` (INT, FK courses.id)
-- `title` (VARCHAR)
-- `content` (TEXT)
-
-### quizzes
-- `id` (INT, PK)
-- `course` (INT, FK courses.id)
-- `title` (VARCHAR)
-- `description` (TEXT)
-
-### questions
-- `id` (INT, PK)
-- `quiz` (INT, FK quizzes.id)
-- `text` (TEXT)
-- `question_type` (VARCHAR)
-
-### answers
-- `id` (INT, PK)
-- `question` (INT, FK questions.id)
-- `student` (INT, FK users.id)
-- `answer_text` (TEXT)
-- `grade` (INT)
-- `comment` (TEXT)
-
-### subscriptions
-- `id` (INT, PK)
-- `user_id` (INT, FK users.id)
-- `course_id` (INT, FK courses.id)
-- `enrolled_at` (TIMESTAMP)
-
-### submissions
-- `student_id` (INT, FK users.id)
-- `project_id` (INT, FK projects.id)
-- `content` (TEXT)
-- `submitted_at` (TIMESTAMP)
-- `grade` (INT)
-- `comment` (TEXT)
-
----
-
-## Installation & Setup
-
-1. **Database Setup**:
-   ```sql
-   CREATE DATABASE elearning;
-   ```
-
-2. **Configuration**:
-   - Edit `config.php` with your database credentials
-   - Default: localhost, user: root, password: empty, database: elearning
-
-3. **Access API**:
-   - Base URL: `http://localhost/api/`
-   - Files: All in `/api/` directory
-
----
-
-## File Structure
-
-```
-elearning/
-├── api.php                 # Main API router
-├── config.php             # Database configuration
-├── User.php              # User model class
-├── Course.php            # Course model class
-├── Quiz.php              # Quiz model class (if exists)
-├── Submission.php        # Submission model class
-├── Subscription.php      # Subscription model class
-├── mySQL_ORM.php        # Database ORM base class
-└── README.md            # This file
+  - Example admin delete for a student
+```bash
+curl -X DELETE "https://api.example.com/submissions/7?student_id=21" \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
 ---
 
-## Support
+## Additional Notes and Implementation Details
+- The API attempts to support environments where the Authorization header may be available under different server variables (HTTP_AUTHORIZATION, REDIRECT_HTTP_AUTHORIZATION, or getallheaders fallback).
+- Ownership checks use courseService methods:
+  - getComponentParentCourse(componentType, componentId)
+  - getQuestionParentCourse(questionId)
+  - getCourseIdByQuizId and getQuestionsForQuiz are referenced and expected to be implemented on Course.php if used.
+- When creating resources the server typically returns an id on success.
+- For public course browsing, GET /courses and GET /courses?search=keyword are available; sensitive course content requires authentication and either enrollment, author, or admin.
+- The code enforces strict separation between student actions and instructor/admin actions for grading and moderation.
+- Input validation performed: name format, password length, unique email, required fields per endpoint.
 
-For API issues or questions, refer to the endpoint documentation above or check the error response messages for specific error details.
+---
 
-**Last Updated**: November 12, 2025  
-**API Version**: 1.0.0
+## Troubleshooting Tips
+- If you receive **401 Unauthorized**, verify that:
+  - The JWT is present in Authorization header exactly as "Bearer <token>".
+  - The token is not expired and verifyJWT returns decoded token with sub field.
+- If you receive **403 Forbidden**, check whether:
+  - Your credential level meets the required level.
+  - You are the course owner for operations restricted to authors.
+  - Students are trying to perform instructor-only actions (grading, removing others).
+- If you receive **404 Not Found**, confirm resource ids exist and that you are using the correct route.
+- For **409 Conflict** on registration, change the email or remove uniqueness constraint violation.
+

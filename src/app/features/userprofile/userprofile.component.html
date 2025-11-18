@@ -6,11 +6,11 @@
       <div class="col-lg-4 col-md-5 col-sm-12">
         <div class="user-info d-flex align-items-center justify-content-between flex-column">
           <div class="img">
-            <img src="../../../assets/profile-img.jpg"  alt="user profile image">
+            <img [src]="avatar"  alt="{{name}}" />
           </div>
           <div class="info d-flex align-items-center justify-content-center my-4  flex-column">
-            <h4>Seif Mohamed</h4>
-            <span>129,El-Nasr Street, Cairo</span>
+            <h4>{{name}}</h4>
+            <span>{{bio}}</span>
 
 
           </div>
@@ -21,7 +21,7 @@
             <a class="pass-manage text-decoration-none d-flex align-items-center justify-content-start" routerLink='password'><i class="fa-solid fa-lock mx-3"></i> Password management</a>
             <a class="user-courses text-decoration-none d-flex align-items-center justify-content-start" routerLink='mycourses'><i class="fa-solid fa-book-open-reader mx-3"></i> My Courses </a>
 
-            <button (click)="logout()"  class="logout d-flex align-items-center justify-content-start mt-3" routerLink='login'> <i class="fa-solid fa-arrow-right-from-bracket mx-3"></i> Log out</button>
+            <button class="logout d-flex align-items-center justify-content-start mt-3" (click)="deleteAccount()"> <i class="fa-solid fa-arrow-right-from-bracket mx-3"></i> delet account </button>
           </div>
 
         </div>

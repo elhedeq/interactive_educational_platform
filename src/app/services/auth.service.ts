@@ -1,35 +1,46 @@
-import { Injectable, inject, signal } from "@angular/core";
+import { Injectable, inject, signal, PLATFORM_ID } from "@angular/core";
 import { from, Observable } from "rxjs";
-import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "@angular/fire/auth";
 import { User } from "../user.interface";
+import { HttpClient } from "@angular/common/http";
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
     providedIn: 'root'
 })
 
 export class AuthService {
-    firebaseAuth = inject(Auth);
-    user$ = this.firebaseAuth;
-    currentUser = signal<User | null | undefined>(undefined);
+    currentUser = signal<User | undefined | null>(null);
+    private http = inject(HttpClient);
+    private platformId = inject(PLATFORM_ID);
+    private apiUrl = 'http://localhost/backend/api.php'; 
 
-    register(email: string, username: string, password: string):Observable<void> {
-        const promise = createUserWithEmailAndPassword(this.firebaseAuth, email, password)
-        .then(response => {
-            updateProfile(response.user, {displayName: username});
-        });
+    // check for token and load user data
+    loadUserFromToken(): void {
+        if (!isPlatformBrowser(this.platformId)) {
+            return;
+        }
 
-        return from(promise);
+        const token = localStorage.getItem('token');
+
+        if (token) {
+            this.http.get<User>(`${this.apiUrl}/users/me`).subscribe({
+                next: (user: User) => {
+                    // Success: The token is valid, set the current user
+                    this.currentUser.set(user);
+                    console.log('User restored from token:', user.email);
+                },
+                error: (err) => {
+                    // Failure: Token is invalid, expired, or server error.
+                    this.logout(); 
+                    console.error('Failed to validate token or fetch user data:', err);
+                }
+            });
+        }
     }
-
-    login(email: string, password: string):Observable<void> {
-        const promise = signInWithEmailAndPassword(this.firebaseAuth, email, password)
-        .then(() => {});
-
-        return from(promise);
+    
+    logout():void {
+        localStorage.removeItem('token');
+        this.currentUser.set(null);
     }
-
-    logout():Observable<void> {
-        const promise = this.firebaseAuth.signOut();
-        return from(promise);
-    }
+    
 }

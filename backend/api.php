@@ -21,17 +21,39 @@ $submissionService = new Submission();
 
 /**
  * Retrieves the authenticated user object from the database based on the Authorization header.
+ * Supports JWT tokens in the format: Authorization: Bearer <JWT_TOKEN>
  * @param User $userService The User service instance.
  * @return array|null The user object or null if not authenticated.
  */
 function getAuthUser($userService) {
-    // Simulated authentication: User ID is passed in the Authorization: Bearer <ID> header
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $authHeader = '';
+    
+    // Check multiple possible locations for Authorization header
+    if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+    } elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        // Some Apache/CGI configurations use REDIRECT_HTTP_AUTHORIZATION
+        $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    } elseif (function_exists('getallheaders')) {
+        // Fallback to getallheaders() function
+        $headers = getallheaders();
+        if (isset($headers['Authorization'])) {
+            $authHeader = $headers['Authorization'];
+        }
+    }
 
-    if (preg_match('/Bearer (\d+)/', $authHeader, $matches)) {
-        $userId = $matches[1];
-        $user = $userService->getUser($userId);
-        return $user;
+    // Extract the token from the Authorization header
+    if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
+        $token = trim($matches[1]);
+        
+        // Verify the JWT token
+        $decoded = $userService->verifyJWT($token);
+        
+        if ($decoded && isset($decoded['sub'])) {
+            // Token is valid, fetch and return the user
+            $user = $userService->getUser($decoded['sub']);
+            return $user;
+        }
     }
 
     return null;
@@ -101,7 +123,52 @@ $uri = explode( '/', $uri );
 
 $parts = array_values(array_filter($uri));
 
-$endpoint = $parts[1] ?? null;
+// Normalize parts array for both direct calls (api.php?...) and routed requests
+// If parts[1] is 'api.php', remove it and shift all indices down
+if (isset($parts[1]) && basename($parts[1]) === 'api.php') {
+    array_splice($parts, 1, 1);
+}
+
+// Query string handling for direct file access
+$queryString = '';
+if (isset($_SERVER['QUERY_STRING']) && !empty($_SERVER['QUERY_STRING'])) {
+    parse_str($_SERVER['QUERY_STRING'], $queryParams);
+} else {
+    $queryParams = [];
+}
+
+// Helper function to get route part (after normalization, index directly)
+function getRoutePart($index) {
+    global $parts;
+    return $parts[$index] ?? null;
+}
+
+$endpoint = getRoutePart(1);
+
+// Helper to check if route matches
+function routeMatches($method, $resource, $hasId = false) {
+    if ($_SERVER['REQUEST_METHOD'] !== $method) return false;
+    if (getRoutePart(1) !== $resource) return false;
+    if ($hasId && getRoutePart(2) === null) return false;
+    return true;
+}
+
+// Helper to get ID from route
+function getRouteId($index = 2) {
+    return (int)(getRoutePart($index) ?? 0);
+}
+
+
+
+// --- GET Current Logged-in User (/users/me) ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'users' && getRoutePart(2) === 'me') {
+    $authUser = getAuthUser($userService);
+    checkAuth(0, $authUser); 
+
+    http_response_code(200);
+    echo json_encode($authUser);
+    exit();
+}
 
 
 // ============================================
@@ -109,13 +176,13 @@ $endpoint = $parts[1] ?? null;
 // ============================================
 
 // --- GET Users ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'users') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'users') {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Must be authenticated
 
-    if (isset($parts[3])) {
+    if (getRoutePart(2)) {
         // GET /users/{id} - Get specific user
-        $userId = (int)$parts[3];
+        $userId = getRouteId(2);
         $user = $userService->getUser($userId);
 
         if (!$user) {
@@ -149,13 +216,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'u
 }
 
 // --- POST User (Create New User) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === 'users') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) === 'users') {
     $data = json_decode(file_get_contents('php://input'), true);
 
     // Validate required fields
-    if (!isset($data['first_name']) || !isset($data['last_name']) || !isset($data['email'])) {
+    if (!isset($data['first_name']) || !isset($data['last_name']) || !isset($data['email']) || !isset($data['password'])) {
         http_response_code(400);
-        echo json_encode(['error' => 'Missing required fields: first_name, last_name, email.']);
+        echo json_encode(['error' => 'Missing required fields: first_name, last_name, email, password.']);
+        exit();
+    }
+
+    // Validate password length
+    if (strlen($data['password']) < 6) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Password must be at least 6 characters long.']);
         exit();
     }
 
@@ -188,12 +262,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === '
         $data['credential'] = 0;
     }
 
-    // Create user
+    // Create user (password will be hashed in addUser)
     $newId = $userService->addUser($data);
 
+    
     if ($newId) {
-        http_response_code(201);
-        echo json_encode(['message' => 'User created successfully.', 'id' => $newId]);
+        // Auto-login after registration
+        $result = $userService->login($data['email'], $data['password']);
+        
+        if ($result['success']) {
+            http_response_code(200);
+            echo json_encode($result);
+        } else {
+            http_response_code(401);
+            echo json_encode(['error' => $result['error']]);
+        }
     } else {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to create user.']);
@@ -202,11 +285,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === '
 }
 
 // --- PUT User (Update User) ---
-if ($_SERVER['REQUEST_METHOD'] === 'PUT' && isset($parts[2]) && $parts[2] === 'users' && isset($parts[3])) {
+if ($_SERVER['REQUEST_METHOD'] === 'PUT' && getRoutePart(1) === 'users' && getRoutePart(2)) {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Must be authenticated
 
-    $userId = (int)$parts[3];
+    $userId = getRouteId(2);
     $targetUser = $userService->getUser($userId);
 
     if (!$targetUser) {
@@ -267,11 +350,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT' && isset($parts[2]) && $parts[2] === 'u
 }
 
 // --- DELETE User ---
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && isset($parts[2]) && $parts[2] === 'users' && isset($parts[3])) {
-    $authUser = getAuthUser($userService);
-    checkAuth(2, $authUser); // Admin only (credential level 2)
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && getRoutePart(1) === 'users' && is_numeric(getRoutePart(2))) {
+    // The target user ID is now in the 2nd part of the route (e.g., /users/5)
+    $userId = (int)getRoutePart(2); 
 
-    $userId = (int)$parts[3];
+    $authUser = getAuthUser($userService);
+    
+    // 1. Check for basic authentication (User must be logged in, credential 0)
+    checkAuth(0, $authUser); 
+
+    // 2. Fetch the target user object
     $targetUser = $userService->getUser($userId);
 
     if (!$targetUser) {
@@ -280,13 +368,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && isset($parts[2]) && $parts[2] ===
         exit();
     }
 
-    // Prevent self-deletion
-    if ($authUser['id'] === $userId) {
-        http_response_code(400);
-        echo json_encode(['error' => 'You cannot delete your own account.']);
+    // 3. Authorization Logic:
+    // Allow if: User is deleting themselves (Owner) OR User is an Admin (Credential 2)
+    // $authUser['id'] == $userId  (Account Owner)
+    // $authUser['credential'] >= 2 (Admin)
+    if ($authUser['id'] != $userId && $authUser['credential'] < 2) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied. You can only delete your own account or you must be an admin.']);
         exit();
     }
 
+    // 4. Execute Deletion
     $result = $userService->deleteUser($userId);
 
     if ($result > 0) {
@@ -304,9 +396,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && isset($parts[2]) && $parts[2] ===
 // ============================================
 
 // --- GET Courses ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'courses') {
-    if (isset($parts[3])) {
-        $courseId = (int)$parts[3];
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'courses') {
+    if (getRoutePart(2)) {
+        $courseId = getRouteId(2);
         $course = $courseService->getCourse($courseId);
 
         if (!$course) {
@@ -314,9 +406,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'c
             echo json_encode(['error' => 'Course not found.']);
             exit();
         }
+// --- PUBLIC PREVIEW ENDPOINT ---
+        // GET /courses/{id}/preview
+        if (getRoutePart(3) === 'preview') {
+            // Manually select ONLY basic info to avoid returning lessons/quizzes
+            $previewData = [
+                'id'          => $course['id'],
+                'name'        => $course['name'],
+                'description' => $course['description'],
+                'thumbnail'   => $course['thumbnail'],
+                'price'       => $course['price'],
+                'author'      => $course['author'],
+                'instructor_first_name'      => $course['instructor_first_name'],
+                'instructor_last_name'      => $course['instructor_last_name'],
+                'category'    => $course['category'],
+                'lessons'    => count($course['lessons'])
+            ];
+
+            http_response_code(200);
+            echo json_encode($previewData);
+            exit();
+        }
+        // -------------------------------
 
         $authUser = getAuthUser($userService);
-        $isAuthenticated = $authUser !== null;
+        $isAuthenticated = is_array($authUser);
         $isAuthor = $isAuthenticated && ($authUser['id'] == $course['author']);
         $isAdmin = $isAuthenticated && ($authUser['credential'] == 2);
         // Only check enrollment if authenticated
@@ -337,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'c
                 exit();
             }
 
-            switch ($parts[4]) {
+            switch (getRoutePart(3)) {
                 case 'lessons':
                     $data = $courseService->getLessons($courseId);
                     break;
@@ -363,6 +477,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'c
             }
         } else {
             // GET /courses/{id}
+            if (!$isAuthenticated) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Authentication required to view course details.']);
+                exit();
+            }
+            
+            if (!$isAdmin && !$isAuthor && !$isEnrolled) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Access denied. You must be enrolled to view this course.']);
+                exit();
+            }
             $data = $course;
         }
 
@@ -380,7 +505,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'c
 }
 
 // --- POST Course ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === 'courses') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) === 'courses') {
     $authUser = getAuthUser($userService);
     checkAuth(1, $authUser); // Rule: Instructor (1+) can create courses
 
@@ -395,11 +520,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === '
 }
 
 // --- PUT/DELETE Course and Components ---
-if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && isset($parts[2]) && $parts[2] === 'courses' && isset($parts[3])) {
+if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && getRoutePart(1) === 'courses' && getRoutePart(2)) {
     $authUser = getAuthUser($userService);
     checkAuth(1, $authUser); // Rule: Instructor (1+) required for all course/component edits/deletes
 
-    $courseId = (int)$parts[3];
+    $courseId = getRouteId(2);
     $course = $courseService->getCourse($courseId);
 
     if (!$course) { http_response_code(404); echo json_encode(['error' => 'Course not found.']); exit(); }
@@ -721,19 +846,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === 'subscriptions') {
 }
 
 // --- DELETE Subscription ---
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && $endpoint === 'subscriptions' && isset($parts[3])) {
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && $endpoint === 'subscriptions' && getRoutePart(2)) {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Rule: Registered users (0+) can manage/delete subscriptions
 
     // URL format: /subscriptions/{courseId}
-    $courseId = (int)$parts[3];
+    $courseId = getRouteId(2);
     $studentId = $authUser['id']; // Default to authenticated user
 
     // Additional checks for Instructor/Admin to delete *other* students' subscriptions
-    if (isset($parts[4]) && $parts[4] === 'student' && isset($parts[5])) {
+    if (getRoutePart(3) === 'student' && getRoutePart(4)) {
         // DELETE /subscriptions/{courseId}/student/{studentId}
         checkAuth(1, $authUser); // Rule: Instructor (1+) needed to delete others
-        $studentId = (int)$parts[5];
+        $studentId = getRouteId(4);
 
         // Ownership Check: Instructor can only remove students from their own courses
         $course = $courseService->getCourse($courseId);
@@ -874,6 +999,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && $endpoint === 'submissions' && is
     exit();
 }
 
+// POST /login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) === 'login') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!isset($data['email']) || !isset($data['password'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Email and password required']);
+        exit();
+    }
+    
+    $result = $userService->login($data['email'], $data['password']);
+    
+    if ($result['success']) {
+        http_response_code(200);
+        echo json_encode($result);
+    } else {
+        http_response_code(401);
+        echo json_encode(['error' => $result['error']]);
+    }
+    exit();
+}
+
+// get courses from same instructor
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'courses' && getRoutePart(3) === 'related' ) {
+    $authUser = getAuthUser($userService);
+    $courseId = getRoutePart(2);
+    $course = $courseService->getCourse($courseId);
+    $data = $courseService->select('courses', '*', 'author = :id','','','','','', '', ['id' => $course['author']]);
+
+    http_response_code(200);
+    echo json_encode($data);
+    exit();
+}
+
+// --- GET Quiz Questions (/quizzes/{id}/questions) ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'quizzes' && is_numeric(getRoutePart(2)) && getRoutePart(3) === 'questions') {
+    $quizId = getRoutePart(2);
+    $authUser = getAuthUser($userService);
+    
+    // Check Authentication (must be a logged-in student)
+    checkAuth(0, $authUser);
+    $studentId = $authUser['id'];
+
+    // Find Course ID associated with the Quiz (Required for Subscription Check)
+    $courseId = $courseService->getCourseIdByQuizId($quizId); // Requires new method in Course.php
+
+    if (!$courseId) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Quiz or associated course not found.']);
+        exit();
+    }
+
+    // Check Subscription
+    $authUser = getAuthUser($userService);
+    $isAuthenticated = is_array($authUser);
+    $isSubscribed = $isAuthenticated ? $subscriptionService->getSubscription($authUser['id'], $courseId) : false;
+
+    if (!$isSubscribed) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied. Student is not subscribed to this course.']);
+        exit();
+    }
+
+    // Retrieve Questions (Requires new method in Course.php)
+    $questions = $courseService->getQuestionsForQuiz($quizId); 
+
+    http_response_code(200);
+    echo json_encode(['questions' => $questions]);
+    exit();
+}
 
 // If no endpoint matched
 http_response_code(404);

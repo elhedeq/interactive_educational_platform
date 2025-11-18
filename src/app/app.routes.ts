@@ -15,6 +15,7 @@ import { InstructorDashboardComponent } from './features/instructor-dashboard/in
 import { UserprofileComponent } from './features/userprofile/userprofile.component';
 import { UserinformationComponent } from './features/userprofile/userinformation/userinformation.component';
 import { UsercoursesComponent } from './features/userprofile/usercourses/usercourses.component';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: "", redirectTo: "home", pathMatch: "full" },
@@ -26,14 +27,15 @@ export const routes: Routes = [
   { path: "login", component: LoginComponent },
   { path: "signup", component: SignUpComponent },
 
-  { path: "checkout/:id", component: CheckoutComponent },
+  { path: "checkout/:id", component: CheckoutComponent, canActivate: [AuthGuard] },
 
   // 🔥 important: standalone component → use component: ViewFullCourseComponent
-  { path: "view-full-course/:id", component: ViewFullCourseComponent },
+  { path: "view-full-course/:id", component: ViewFullCourseComponent, canActivate: [AuthGuard] },
 
   {
     path: "instructor",
     component: InstructorDashboardComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: "create", component: InstructorDashboardComponent },
       { path: "quizzes", component: InstructorDashboardComponent },
@@ -44,9 +46,13 @@ export const routes: Routes = [
   {
     path: "userprofile",
     component: UserprofileComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: "personal-info", component: UserinformationComponent },
       { path: "mycourses", component: UsercoursesComponent }
     ]
-  }
+  },
+  
+  // Catch-all route - redirect unmatched routes to home
+  { path: "**", redirectTo: "home", pathMatch: "full" }
 ];

@@ -22,7 +22,7 @@ class User extends mySQL_ORM{
      */
 
     public function getUsers(){
-        $this->select($this->table, 'first_name, last_name, email, id, bio, avatar, credential');
+        $this->select($this->table, 'first_name, last_name, email, birth_date, id, bio, avatar, credential');
         return $this->fetchAll();
     }
 
@@ -33,7 +33,7 @@ class User extends mySQL_ORM{
      */
 
     public function getUser($userId){
-        $this->select($this->table,'*','id = :id','','','','','','', ['id' => $userId]);
+        $this->select($this->table,'first_name, last_name, email, birth_date, id, bio, avatar, credential','id = :id','','','','','','', ['id' => $userId]);
         return $this->fetch();
     }
 
@@ -44,7 +44,7 @@ class User extends mySQL_ORM{
      */
 
     public function getUserByEmail($email){
-        $this->select($this->table,'*','email = :email','','','','','','', ['email' => $email]);
+        $this->select($this->table,'first_name, last_name, email, birth_date, id, bio, avatar, credential, password','email = :email','','','','','','', ['email' => $email]);
         return $this->fetch();
     }
 
@@ -55,6 +55,10 @@ class User extends mySQL_ORM{
      */
 
     public function addUser($userData){
+        // Hash password if provided
+        if (isset($userData['password']) && !empty($userData['password'])) {
+            $userData['password'] = $this->hashPassword($userData['password']);
+        }
         return $this->insert($this->table,$userData);
     }
 
@@ -87,13 +91,131 @@ class User extends mySQL_ORM{
 
     public function searchUsers($keyword) {
         $keyword = $keyword;
-        $this->select($this->table, '*', "first_name LIKE '%$keyword%' OR last_name LIKE '%$keyword%' OR email LIKE '%$keyword%'");
+        $this->select($this->table, 'first_name, last_name, birth_date, email, id, bio, avatar, credential', "users.first_name LIKE '%$keyword%' OR users.last_name LIKE '%$keyword%' OR users.email LIKE '%$keyword%'");
         return $this->fetchAll();
     }
 
     public function is_valid_name($name) {
         // Allow letters, numbers, underscores, dashes, and spaces
         return preg_match('/^[\p{L}\p{N} _-]+$/u', $name);
+    }
+
+    /**
+     * Hash a password using bcrypt
+     * @param string $password the plain text password
+     * @return string the hashed password
+     */
+    public function hashPassword($password) {
+        return password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+    }
+
+    /**
+     * Login user with email and password
+     * @param string $email the user's email
+     * @param string $password the user's password
+     * @return array with 'success' and 'token' or 'error' message
+     */
+    public function login($email, $password) {
+        // Get user by email
+        $user = $this->getUserByEmail($email);
+        
+        if (!$user) {
+            return [
+                'success' => false,
+                'error' => 'Invalid email or password'
+            ];
+        }
+
+        // Verify password
+        if (!isset($user['password']) || !password_verify($password, $user['password'])) {
+            return [
+                'success' => false,
+                'error' => 'Invalid email or password'
+            ];
+        }
+
+        // Generate JWT token
+        $token = $this->generateJWT($user);
+
+        return [
+            'success' => true,
+            'token' => $token,
+            'user' => [
+                'id' => $user['id'],
+                'first_name' => $user['first_name'],
+                'last_name' => $user['last_name'],
+                'birth_date' => $user['birth_date'],
+                'email' => $user['email'],
+                'id' => $user['id'],
+                'bio' => $user['bio'],
+                'avatar' => $user['avatar'],
+                'credential' => $user['credential']
+            ]
+        ];
+    }
+
+    /**
+     * Generate JWT token for a user
+     * @param array $user the user data
+     * @return string JWT token
+     */
+    private function generateJWT($user) {
+        $header = json_encode(['alg' => 'HS256', 'typ' => 'JWT']);
+        $payload = json_encode([
+            'sub' => $user['id'],
+            'email' => $user['email'],
+            'iat' => time(),
+            'exp' => time() + (24 * 60 * 60) // 24 hours
+        ]);
+
+        $base64Header = rtrim(strtr(base64_encode($header), '+/', '-_'), '=');
+        $base64Payload = rtrim(strtr(base64_encode($payload), '+/', '-_'), '=');
+
+        $signature = hash_hmac('sha256', $base64Header . '.' . $base64Payload, getenv('JWT_SECRET') ?: 'your-secret-key', true);
+        $base64Signature = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
+
+        return $base64Header . '.' . $base64Payload . '.' . $base64Signature;
+    }
+
+    /**
+     * Verify and decode a JWT token
+     * @param string $token the JWT token
+     * @return array|null decoded token payload or null if invalid/expired
+     */
+    public function verifyJWT($token) {
+        if (!$token || strpos($token, '.') === false) {
+            return null;
+        }
+
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        list($base64Header, $base64Payload, $base64Signature) = $parts;
+
+        // Reconstruct the signature to verify
+        $signature = hash_hmac('sha256', $base64Header . '.' . $base64Payload, getenv('JWT_SECRET') ?: 'your-secret-key', true);
+        $expectedSignature = rtrim(strtr(base64_encode($signature), '+/', '-_'), '=');
+
+        // Verify signature
+        if (!hash_equals($expectedSignature, $base64Signature)) {
+            return null;
+        }
+
+        // Decode payload
+        $payload = json_decode(base64_decode(strtr($base64Payload, '-_', '+/') . str_repeat('=', 4 - strlen($base64Payload) % 4)), true);
+
+        if (!$payload) {
+            return null;
+        }
+
+        // Check expiration
+        if (isset($payload['exp']) && $payload['exp'] < time()) {
+            return null;
+        }
+
+        return $payload;
     }
 
 }

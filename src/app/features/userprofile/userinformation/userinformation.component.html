@@ -6,37 +6,37 @@
 
     <div class="col-md-6">
       <div>
-         <label for="username" class="text-capitalize">Full name</label>
-         <input type="text" class="w-100">
+         <label for="username" class="text-capitalize">first name</label>
+         <input type="text" class="w-100" [(ngModel)] = "first_name">
 
          <label for="email" class="text-capitalize mt-5">Email</label>
-         <input type="email" class="w-100">
+         <input type="email" class="w-100" [(ngModel)] = "email">
       </div>
     </div>
 
 
     <div class="col-md-6">
       <div>
-         <label for="phone" class="text-capitalize mt-lg-0 mt-md-0 mt-5">Phone number</label>
-         <input type="tel" id="phone" class="w-100">
+          <label for="lastname" class="text-capitalize">last name</label>
+          <input type="text" class="w-100" [(ngModel)] = "last_name">
 
          <label class="text-capitalize mt-5" > birthday</label>
             <div class="d-flex align-items-center justify-content-center flex-lg-nowrap flex-md-wrap gap-4 mt-1">
                <!--days -->
          <select name="day" id="day" class="w-100 p-2 p-2" [(ngModel)]="dayselected">
-           <option value="" disabled selected>Day</option>
+           <option [ngValue]="null" disabled selected>Day</option>
            <option *ngFor="let day of days" [value]="day">{{ day }}</option>
          </select>
          <!-- months -->
 
-         <select name="month" id="month" class="w-100 p-2" [(ngModel)]="selectedmonth">
-           <option value="" disabled selected>month</option>
+         <select name="month" id="month" class="w-100 p-2" [(ngModel)]="selectedmonth" [value]="selectedmonth">
+           <option [ngValue]="null" disabled selected>month</option>
            <option *ngFor="let month of months" [value]="month.value">{{ month.name }}</option>
          </select>
 
         <!-- years -->
-         <select name="year" id="year" class="w-100 p-2 " [(ngModel)]="selectedyear">
-           <option value="" disabled selected>year</option>
+         <select name="year" id="year" class="w-100 p-2 " [(ngModel)]="selectedyear" [value]="selectedyear">
+           <option [ngValue]="null" disabled selected>year</option>
            <option *ngFor="let year of years" [value]="year">{{ year }}</option>
          </select>
 
@@ -49,13 +49,13 @@
 
 
     <div class="col-md-12 mt-5">
-      <label for="location" class="text-capitalize">location</label>
-         <input type="text" id="location" class="w-100">
+      <label for="location" class="text-capitalize">bio</label>
+         <input type="text" id="location" class="w-100" [(ngModel)]="bio">
     </div>
 
     <div class="col-md-12 align-self-end">
       <div class="d-flex align-items-end  justify-content-end">
-        <button class="save-change align-self-end">
+        <button class="save-change align-self-end" (click)="saveChanges()">
         save changes
 
       </button>

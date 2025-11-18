@@ -1,15 +1,29 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { inject } from '@angular/core'
+import { AuthService } from '../../services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 interface Course {
   id: number;
-  title: string;
-  subtitle?: string;
-  img?: string;
-  instructor?: { name: string; rating?: number; img?: string };
-  description?: string;
+  name: string;
+  description: string;
+  thumbnail?: string;
+  price: number;
+  author: number;
+  instructor_first_name: string;
+  instructor_last_name: string;
 }
+
+type Question = {id: number; question_order: number; type: number; head: string; answer: string; quiz: number}
+
+type LessonContent = { id: number; order: number; type: 'lesson'; name: string; description: string; thumbnail?: string; url: string; course: number; questions?: Question[]; showQuestions?: boolean };
+type QuizContent = { id: number; order: number; type: 'quiz'; name: string; description: string; thumbnail?: string; url?: string; course: number; questions?: Question[]; showQuestions?: boolean };
+type ProjectContent = { id: number; name: string; description: string;  thumbnail?: string; url?: string; course: number; type: 'project'; questions?: Question[]; showQuestions?: boolean };
+
+type CourseContent = LessonContent | QuizContent | ProjectContent;
 
 @Component({
   selector: 'app-view-full-course',
@@ -18,49 +32,106 @@ interface Course {
   templateUrl: './view-full-course.component.html',
   styleUrls: ['./view-full-course.component.css']
 })
+
 export class ViewFullCourseComponent implements OnInit {
 
+  authService = inject(AuthService);
+  http = inject(HttpClient);
   course!: Course;
 
-  courses: Course[] = [
-    { id: 1, title: 'Learn about Adobe XD & Prototyping', subtitle: 'Introduction about XD', img: '../../../assets/classroom.jpg', instructor: { name: 'Bulkin Simons', rating: 4.8, img: '../../../assets/instructor.png' }, description: 'Brief about the course' },
-    { id: 2, title: 'Front-End Web Development', subtitle: 'HTML, CSS, JS', img: '../../../assets/front course.webp', instructor: { name: 'Sara', rating: 4.9, img: '../../../assets/avatar (1).jpg' }, description: 'Build modern websites' },
-    { id: 3, title: 'Data Science Basics', subtitle: 'Intro to Data', img: '../../../assets/data course.webp', instructor: { name: 'Omar', rating: 4.7, img: '../../../assets/student.png' }, description: 'Data fundamentals' }
-  ];
-
-  lessons: { id: number; title: string; duration: string; kind?: string }[] = [];
-  selectedLesson: { id: number; title: string; duration: string; kind?: string } | null = null;
+  lessons: LessonContent[] = [];
+  quizzes: QuizContent[] = [];
+  project: ProjectContent | null = null;
+  mergedContent: CourseContent[] = [];
+  selectedContent: CourseContent | null = null;
 
   sidebarGroups = [
     { title: 'Change Simplification', lessonsKey: 'main' },
     { title: 'Practice Quiz', lessonsKey: 'quiz' }
   ];
 
-  studentAlsoBought: Course[] = [];
+  relatedCourses: any = [];
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute, private router: Router) {  }
 
-  ngOnInit(): void {
+  async ngOnInit(){
     const param = Number(this.route.snapshot.paramMap.get('id')) || 1;
-
-    this.course = this.courses.find(c => c.id === param) || this.courses[0];
-
-    const counts = [5, 6, 8];
-    const count = counts[this.course.id % 3];
-
-    this.lessons = Array.from({ length: count }, (_, i) => ({
-      id: i + 1,
-      title: `Lesson ${i + 1}`,     // ← التعديل هنا
-      duration: `${20 + (i % 3) * 5} mins`,
-      kind: i % 2 === 0 ? 'Lesson' : 'Practice'
-    }));
-
-    this.selectedLesson = this.lessons[0];
-
-    this.studentAlsoBought = this.courses.filter(c => c.id !== this.course.id).slice(0, 4);
+    this.http.get(`http://localhost/backend/api.php/courses/${param}`)
+    .subscribe({
+      next: (response:any) => {
+        this.course = response;
+        const lessons = response.lessons.map((lesson: any) => ({
+          ...lesson,
+          name: lesson.title,
+          order: lesson.lesson_order,
+          type: 'lesson'
+        }));
+        const quizzes = response.quizzes.map((quiz: any) => ({
+          ...quiz,
+          order: quiz.quiz_order,
+          type: 'quiz'
+        }));
+        let project = response.projects;
+        project.order = lessons.length + quizzes.length + 1;
+        project.type = 'project';
+        this.mergedContent = [...lessons, ...quizzes, project];
+        this.selectedContent = this.mergedContent[0] || null;
+        this.resetVideo();
+      },
+      error: (err) => {
+        console.error('Error fetching course data:', err);
+        if (err.status === 403) {
+          this.router.navigate(['/home']); 
+        }
+      }
+    });
+    
+  }
+  
+  selectItem(item: CourseContent) {
+    this.selectedContent = item;
+    if (item.type === 'lesson') {
+      this.resetVideo();
+    } else if (item.type === 'quiz') {
+      this.http.get(`http://localhost/backend/api.php/quizzes/${item.id}/questions`)
+      .subscribe({
+        next: (res:any) => {
+          if (this.selectedContent) {
+            if (res.questions.length > 0) {
+              this.selectedContent.questions = res.questions;
+              this.selectedContent.showQuestions = true;
+            } else {
+              this.selectedContent.showQuestions = false;
+            }
+          }
+        }, 
+        error: (err: any) => {
+          console.error('Error fetching questions:', err);
+        }
+      });
+    }
   }
 
-  selectLesson(l: { id: number; title: string; duration: string }) {
-    this.selectedLesson = l;
+  playVideo() {
+    const videoPlayer = document.getElementById('video-player');
+    const videoThumbnail = document.getElementById('thumbnail');
+    if (!videoPlayer || !videoThumbnail) return;
+    videoThumbnail!.style.display = 'none';
+    videoPlayer!.style.display = 'block';
+    (videoPlayer as HTMLVideoElement).autoplay = true;
   }
+
+  resetVideo() {
+    const videoPlayer = document.getElementById('video-player');
+    const videoThumbnail = document.getElementById('thumbnail');
+    if (!videoPlayer || !videoThumbnail) return;
+    videoThumbnail!.style.display = 'block';
+    videoPlayer!.style.display = 'none';
+    (videoPlayer as HTMLVideoElement).autoplay = true;
+  }
+
+  onSubmitQuiz() {
+    console.log('Quiz submitted');
+  }
+
 }

@@ -21,6 +21,7 @@ input:focus{
     box-shadow: 0 0 0 2px rgba(20, 93, 184, 0.1);
     outline: none;
     border: #145DB8;
+    color: black !important;
 
 }
 select{

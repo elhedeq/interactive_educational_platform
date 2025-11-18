@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AuthRoutingModule } from "../../auth/auth-routing.module";
 import { AuthService } from '../../services/auth.service';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
@@ -13,6 +14,8 @@ import { inject } from '@angular/core';
 })
 export class NavbarComponent {
   authService = inject(AuthService);
+
+  constructor(private router:Router) { }
 
   // menue of user profile if we going to open or close it
   isProfileMenueOpen=false
@@ -34,6 +37,11 @@ export class NavbarComponent {
 
   logout(){
     this.authService.logout();
+    this.router.navigate(['/home']);
+  }
+
+  gotoProfile(){
+    this.router.navigate(['/userprofile']);
   }
 
 }

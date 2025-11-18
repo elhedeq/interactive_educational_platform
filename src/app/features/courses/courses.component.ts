@@ -1,24 +1,35 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router'; // ✅ أضفنا دا
+import { RouterModule } from '@angular/router'; 
+import { HttpClient } from '@angular/common/http';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, RouterModule], // ✅ أضفنا RouterModule هنا
+  imports: [CommonModule, RouterModule],
   templateUrl: './courses.component.html',
   styleUrls: ['./courses.component.css']
 })
-export class CoursesComponent {
+export class CoursesComponent implements OnInit{
+  categories: Set<string>=new Set<string>();
   selectedCategory: string = '';
+  http = inject(HttpClient);
 
-  courses = [
-    { id: 1, title: 'Leadership & Management', category: 'Business', teacher: 'Ahmed', rating: 4.7, date: '2025-09-10', img: '../../../assets/leader course.jpg' },
-    { id: 2, title: 'Front-End Web Development', category: 'Computer Science', teacher: 'Sara', rating: 4.9, date: '2025-09-20', img: '../../../assets/front course.webp' },
-    { id: 3, title: 'Marketing Strategies', category: 'Marketing', teacher: 'Laila', rating: 4.6, date: '2025-10-01', img: '../../../assets/marketing course.webp' },
-    { id: 4, title: 'Data Science Basics', category: 'Data Science', teacher: 'Omar', rating: 4.8, date: '2025-10-05', img: '../../../assets/data course.webp' },
-    { id: 5, title: 'Art History', category: 'Arts and Humanities', teacher: 'Nora', rating: 4.3, date: '2025-08-28', img: '../../../assets/art course.webp' },
-  ];
+  courses:{id:number,name:string,description:string,thumbnail:string,price:number,author:number,category:string,instructor_first_name:string,instructor_last_name:string}[] = [];
+
+  ngOnInit(): void {
+    this.http.get<any[]>('http://localhost/backend/api.php/courses')
+    .subscribe({
+      next: (data) => {
+        this.courses = data;
+        this.categories = new Set(data.map(c => c.category));
+      },
+      error: (err) => {
+        console.error('Error fetching courses:', err);
+      }
+    })
+  }
 
   filterByCategory(catName: string) {
     this.selectedCategory = catName;
@@ -29,12 +40,12 @@ export class CoursesComponent {
     return this.courses.filter(c => c.category === this.selectedCategory);
   }
 
-  get topCourses() {
-    return this.courses.filter(c => c.rating >= 4.7);
-  }
+  // get topCourses() {
+  //   return this.courses.filter(c => c.rating >= 4.7);
+  // }
 
   get newCourses() {
-    return this.courses.sort((a, b) => Date.parse(b.date) - Date.parse(a.date)).slice(0, 3);
+    return this.courses.sort((a, b) => b.id - a.id).slice(0, 3);
   }
 
   showMoreCourses() {

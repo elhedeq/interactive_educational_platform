@@ -32,36 +32,25 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
   });
+  
 
   onSubmit() {
     const formData = this.loginForm.getRawValue();
-    this.authService.login(formData.email, formData.password)
-    .subscribe({
-      next: () => {
+    this.http.post('http://localhost/backend/api.php/login', {
+      email: formData.email,
+      password: formData.password
+    }).subscribe({
+      next:(response: any) => {
+      localStorage.setItem('token', response.token);
+      this.authService.currentUser.set(response.user);
+      this.authService.loadUserFromToken();
       this.router.navigate(['/home']);
-      },
+    },
       error: (err) => {
-        this.errorMessage = err.code;
+        console.error('Login error:', err);
+        this.errorMessage = 'Invalid email or password. Please try again.';
       }
     });
   }
 }
 
-// export const routes: Routes = [
-//     { path: "home", component: HomeComponent },
-//     { path: "courses", component: CoursesComponent },
-//     { path: 'course-details/:id', component: CourseDetailsComponent },
-//     { path: "", redirectTo: "home", pathMatch: 'full' },
-//     { path: "login", component: LoginComponent },
-//     { path: "signup", component: SignUpComponent },
-//     {
-//         path: "instructor",
-//         component: InstructorDashboardComponent,
-//         children: [
-//             { path: '', component: InstructorDashboardComponent },
-//             { path: 'create', component: InstructorDashboardComponent },
-//             { path: 'quizzes', component: InstructorDashboardComponent },
-//             { path: 'projects', component: InstructorDashboardComponent }
-//         ]
-//     },
-// ];

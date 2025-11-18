@@ -2,80 +2,99 @@
   <div class="row">
 
     <!-- SIDEBAR (left) -->
-    <aside class="col-lg-3 pe-3">
+    <aside class="col-lg-3 pe-3" *ngIf="course">
       <div class="sidebar-card p-3 mb-4">
-        <div class="back-btn">‹</div>
-        <h6 class="mb-3 fw-bold">{{ course.title }}</h6>
+        <a class="back-btn" routerLink="/userprofile">‹</a>
+        <h6 class="mb-3 fw-bold">{{ course.name }}</h6>
 
-        <div *ngFor="let g of sidebarGroups" class="group mb-3">
-          <div class="group-title small text-uppercase text-muted mb-2">{{ g.title }}</div>
-
-          <div *ngFor="let lesson of lessons" 
+        <div *ngFor="let item of mergedContent" 
                class="lesson-item d-flex justify-content-between align-items-center mb-2"
-               [class.active]="selectedLesson?.id === lesson.id"
-               (click)="selectLesson(lesson)">
+               [class.active]="selectedContent?.id === item.id"
+               (click)="selectItem(item)">
 
             <div class="d-flex align-items-center gap-2">
               <div class="lesson-bullet"></div>
               <div class="lesson-meta">
-                <div class="lesson-name small text-truncate">{{ lesson.title }}</div>
-                <div class="lesson-sub small text-muted">{{ lesson.duration }}</div>
+                <div class="lesson-name small text-truncate">{{ item.name }}</div>
+                <div class="lesson-sub small text-muted">{{ item.type }}</div>
               </div>
             </div>
 
             <div class="chev small text-muted">▶</div>
           </div>
-
-        </div>
       </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="col-lg-9">
+    <main class="col-lg-9" *ngIf="course">
 
       <div class="course-header bg-success bg-opacity-10 rounded-3 p-3 mb-3 d-flex justify-content-between align-items-center">
         <div>
-          <h3 class="mb-0">{{ course.title }}</h3>
-          <small class="text-muted">{{ course.subtitle }}</small>
-        </div>
-        <div class="text-muted small">⏱ {{ lessons.length }} lessons</div>
-      </div>
-
-      <div class="video-wrapper rounded-3 overflow-hidden mb-4">
-        <img [src]="course.img" alt="poster" class="video-poster w-100 h-100">
-        <div class="video-overlay">
-          <div class="play">▶</div>
+          <h3 class="mb-0">{{ course.name }}</h3>
+          <small class="text-muted">{{ course.description }}</small>
         </div>
       </div>
 
-      <h5 class="fw-bold">{{ selectedLesson?.title }}</h5>
-      <p class="text-muted mb-3">This is a static placeholder for lesson content. When backend is ready you'll load real content here.</p>
+      <div *ngIf="selectedContent && selectedContent.type !== 'quiz' ">
+        
+        <div *ngIf="selectedContent && selectedContent.type === 'lesson' " class="video-wrapper rounded-3 overflow-hidden mb-4">
+          <video [src]="selectedContent.url" controls class="h-100 w-100" id="video-player"></video>
+          <div id="thumbnail">
+            <img [src]="selectedContent.thumbnail" alt="thumbnail" class="video-poster w-100 h-100">
+            <div class="video-overlay">
+              <div class="play" (click)="playVideo()">▶</div>
+            </div>
+          </div>
+        </div>
 
-      <section class="text-block mb-3">
-        <h6>Super Coins on the way</h6>
-        <p class="text-muted small">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Content placeholder about the course.</p>
-      </section>
+        <h5 class="fw-bold">
+          {{ selectedContent.name }}
+        </h5>
+        <p class="text-muted mb-3">{{ selectedContent.description }}</p>
 
-      <section class="text-block mb-3">
-        <h6>Who this course is for?</h6>
-        <p class="text-muted small">Students who want to learn the basics and get practical knowledge.</p>
-      </section>
+        <form *ngIf="selectedContent && selectedContent.type === 'project' " (ngSubmit)="onSubmitQuiz()">
+          <div class="form-group m-4">
+              <label for="project" class="fw-semibold mb-2">upload files</label>
+              <input type="file" class="form-control" id="project">
+            </div>
+            <button type="submit" class="btn btn-primary">upload</button>
+        </form>
+
+      </div>
+
+      <div *ngIf="selectedContent && selectedContent.type === 'quiz' ">
+        
+        <h5 class="fw-bold">
+          {{ selectedContent.name }}
+        </h5>
+        <p class="text-muted mb-3">{{ selectedContent.description }}</p>
+        <form *ngIf="selectedContent.showQuestions" (ngSubmit)="onSubmitQuiz()">
+          <div class="form-group m-4" *ngFor="let q of selectedContent.questions">
+              <div class="fw-semibold mb-2">{{ q.head }}</div>
+              <input type="text" class="form-control" placeholder="Your answer here">
+            </div>
+            <button type="submit" class="btn btn-primary">save</button>
+        </form>
+        <p *ngIf="!selectedContent.showQuestions" class="text-danger">
+          sorry no questions available.
+        </p>
+      </div>
 
       <section class="instructor-box d-flex align-items-center p-3 rounded-3 mb-4">
-        <img [src]="course.instructor?.img || '../../../assets/instructor.png'" alt="instr" class="instr-img me-3">
+        <!-- <img [src]="course.instructor?.img || '../../../assets/instructor.png'" alt="instr" class="instr-img me-3"> -->
         <div>
-          <div class="fw-bold">{{ course.instructor?.name || 'Instructor' }}</div>
-          <div class="small text-muted">★ {{ course.instructor?.rating || '4.5' }} · 120 reviews</div>
+          <div class="fw-bold">{{ course.instructor_first_name + ' ' + course.instructor_last_name || 'Instructor' }}</div>
+          <!-- <div class="small text-muted">★ {{ course.instructor?.rating || '4.5' }} · 120 reviews</div> -->
         </div>
       </section>
 
-      <h6 class="mb-3">Student also bought</h6>
+      <!-- <h6 class="mb-3">Student also bought</h6>
       <div class="also-row d-flex gap-3 flex-wrap">
         <div class="also-card p-2 rounded-3" *ngFor="let c of studentAlsoBought">
           <img [src]="c.img" alt="{{c.title}}" class="also-img mb-2">
           <div class="small fw-semibold">{{ c.title }}</div>
         </div>
-      </div>
+      </div> -->
 
     </main>
   </div>
