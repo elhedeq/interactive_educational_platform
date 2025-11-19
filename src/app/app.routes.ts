@@ -11,7 +11,7 @@ import { CheckoutComponent } from './features/checkout/checkout.component';
 import { ViewFullCourseComponent } from './features/view-full-course/view-full-course.component';
 
 import { InstructorDashboardComponent } from './features/instructor-dashboard/instructor-dashboard.component';
-
+import { CreateCourseComponent } from './features/create-course/create-course.component';
 import { UserprofileComponent } from './features/userprofile/userprofile.component';
 import { UserinformationComponent } from './features/userprofile/userinformation/userinformation.component';
 import { UsercoursesComponent } from './features/userprofile/usercourses/usercourses.component';
@@ -37,7 +37,7 @@ export const routes: Routes = [
     component: InstructorDashboardComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: "create", component: InstructorDashboardComponent },
+      { path: "create", component: CreateCourseComponent },
       { path: "quizzes", component: InstructorDashboardComponent },
       { path: "projects", component: InstructorDashboardComponent }
     ]
@@ -52,7 +52,7 @@ export const routes: Routes = [
       { path: "mycourses", component: UsercoursesComponent }
     ]
   },
-  
+
   // Catch-all route - redirect unmatched routes to home
   { path: "**", redirectTo: "home", pathMatch: "full" }
 ];
