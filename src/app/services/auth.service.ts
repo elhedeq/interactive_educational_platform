@@ -27,7 +27,6 @@ export class AuthService {
                 next: (user: User) => {
                     // Success: The token is valid, set the current user
                     this.currentUser.set(user);
-                    console.log('User restored from token:', user.email);
                 },
                 error: (err) => {
                     // Failure: Token is invalid, expired, or server error.
@@ -41,6 +40,10 @@ export class AuthService {
     logout():void {
         localStorage.removeItem('token');
         this.currentUser.set(null);
+    }
+
+    getCredential() {
+        return this.currentUser()?.credential
     }
     
 }

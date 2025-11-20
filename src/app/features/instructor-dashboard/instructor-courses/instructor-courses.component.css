@@ -1,0 +1,50 @@
+.course {
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid grey;
+    border-radius: 10px;
+    width: 90%;
+}
+
+.tag {
+    color: white;
+    font-size: 0.7rem;
+    border-radius: 5px 0;
+    background-color: var(--header-color);
+    padding: 5px;
+    margin: 5px;
+}
+
+.card-link {
+    display: inline-block;
+    border: 1px solid var(--footer-main);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.card-link:hover {
+    background-color: var(--footer-main);
+    color: white;
+}
+
+.enroll, .complete {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.enroll .number, .complete .number {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+@media (max-width: 992px) {
+    .wrapper {
+        width: 100%;
+        margin-left: 0;
+    }
+}

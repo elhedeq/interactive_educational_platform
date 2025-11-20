@@ -13,7 +13,14 @@ import { Router } from '@angular/router';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
+  user: any;
   authService = inject(AuthService);
+  authorized: boolean = false;
+
+  isAuthorized(): boolean {
+    this.user = this.authService.currentUser();
+    return this.user !== null && (this.user.credential > 0);
+  }
 
   constructor(private router:Router) { }
 
@@ -42,6 +49,17 @@ export class NavbarComponent {
 
   gotoProfile(){
     this.router.navigate(['/userprofile']);
+  }
+
+  gotoDashboard(){
+    this.user = this.authService.currentUser();
+    if (this.user) {
+      if (this.user.credential == 1) {
+        this.router.navigate(['/instructor']);
+      } else if (this.user.credential == 2) {
+        this.router.navigate(['/admin']);
+      }
+    }
   }
 
 }

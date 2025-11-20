@@ -1,0 +1,46 @@
+<div class="container p-5 m-3">
+  <h1>Create Newcourse</h1>
+  <form>
+    <div class="form-group">
+      <label for="name" class="text-capitalize">course name</label>
+      <input
+        type="text"
+        class="form-control"
+        name="name"
+        placeholder="enter the coursename"
+        [(ngModel)]="name"
+      />
+    </div>
+    <div class="form-group">
+      <label for="description" class="text-capitalize">description</label>
+      <textarea
+        type="text"
+        class="form-control"
+        name="description"
+        placeholder="enter the description"
+        [(ngModel)]="description"
+      ></textarea>
+    </div>
+    <div class="form-group">
+      <label for="price" class="text-capitalize">price</label>
+      <input
+        type="number"
+        class="form-control"
+        name="price"
+        placeholder="enter the price"
+        [(ngModel)]="price"
+      />
+    </div>
+    <div class="form-group">
+      <label for="category" class="text-capitalize">category</label>
+      <input
+        type="text"
+        class="form-control"
+        name="category"
+        placeholder="enter the category"
+        [(ngModel)]="category"
+      />
+    </div>
+  </form>
+
+</div>

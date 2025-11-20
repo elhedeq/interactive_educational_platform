@@ -7,14 +7,13 @@ import { NavbarComponent } from './core/navbar/navbar.component';
 import { FooterComponent } from './core/footer/footer.component';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
-import { SidebarComponent } from './core/sidebar/sidebar.component';
 import { HttpClient } from '@angular/common/http';
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet,RouterModule, NavbarComponent,FooterComponent, SidebarComponent,CommonModule],
+  imports: [RouterOutlet,RouterModule, NavbarComponent,FooterComponent,CommonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -39,7 +38,6 @@ export class AppComponent implements OnInit {
       .subscribe(() => {
         const currentUrl = this.router.routerState.root.firstChild?.snapshot.url[0]?.path;
         this.showFooter = !(currentUrl === 'login' || currentUrl === 'signup' || currentUrl === 'instructor');
-        this.showSidebar = !(currentUrl === 'instructor');
       });
   }
 

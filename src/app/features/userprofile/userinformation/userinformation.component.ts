@@ -61,7 +61,7 @@ export class UserinformationComponent implements OnInit {
         this.last_name=data.last_name
         this.email=data.email
         this.bio=data.bio
-        // 2Safety check: Only set date if data.birth_date exists
+        // Only set date if data.birth_date exists
           if (data.birth_date || data.birthdate) { // Check which field name your DB uses
             const dateStr = data.birth_date || data.birthdate; 
             this.birthdate = new Date(dateStr);

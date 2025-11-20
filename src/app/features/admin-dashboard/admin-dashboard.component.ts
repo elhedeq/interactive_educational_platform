@@ -1,28 +1,25 @@
 import { Component } from '@angular/core';
-import { AuthRoutingModule } from "../../auth/auth-routing.module";
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
-import { HttpClient } from '@angular/common/http';
+import { AuthRoutingModule } from "../../auth/auth-routing.module";
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-instructor-dashboard',
+  selector: 'app-admin-dashboard',
   standalone: true,
   imports: [AuthRoutingModule, CommonModule, RouterModule],
-  templateUrl: './instructor-dashboard.component.html',
-  styleUrl: './instructor-dashboard.component.css'
+  templateUrl: './admin-dashboard.component.html',
+  styleUrl: './admin-dashboard.component.css'
 })
-export class InstructorDashboardComponent {
-  http = inject(HttpClient);
+export class AdminDashboardComponent {
   authService = inject(AuthService);
   sidebarOpen = false;
-  user: any;
   constructor(private router: Router) {   }
 
   ngOnInit(): void {
-    if (this.authService.getCredential() != 1) {
+    if (this.authService.getCredential() != 2) {
       this.router.navigate(['/home']);
     }
   }
@@ -30,5 +27,5 @@ export class InstructorDashboardComponent {
   toggleSidebar() {
     this.sidebarOpen = !this.sidebarOpen;
   }
-  
+
 }

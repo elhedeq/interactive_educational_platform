@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormsModule } from "@angular/forms";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 
 @Component({
   selector: 'app-create-course',
@@ -9,5 +9,8 @@ import { FormsModule } from "@angular/forms";
   styleUrl: './create-course.component.css'
 })
 export class CreateCourseComponent {
-
+  name: string = '';
+  description: string = '';
+  price: number | null = null;
+  category: string = '';
 }

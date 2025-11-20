@@ -11,11 +11,20 @@ import { CheckoutComponent } from './features/checkout/checkout.component';
 import { ViewFullCourseComponent } from './features/view-full-course/view-full-course.component';
 
 import { InstructorDashboardComponent } from './features/instructor-dashboard/instructor-dashboard.component';
-import { CreateCourseComponent } from './features/create-course/create-course.component';
+import { InstructorCoursesComponent } from './features/instructor-dashboard/instructor-courses/instructor-courses.component';
+import { CreateCourseComponent } from './features/instructor-dashboard/create-course/create-course.component';
+
 import { UserprofileComponent } from './features/userprofile/userprofile.component';
 import { UserinformationComponent } from './features/userprofile/userinformation/userinformation.component';
 import { UsercoursesComponent } from './features/userprofile/usercourses/usercourses.component';
+
 import { AuthGuard } from './guards/auth.guard';
+import { GradeQuizzesComponent } from './features/instructor-dashboard/grade-quizzes/grade-quizzes.component';
+import { GradeProjectsComponent } from './features/instructor-dashboard/grade-projects/grade-projects.component';
+import { OverviewComponent } from './features/admin-dashboard/overview/overview.component';
+import { AccountsComponent } from './features/admin-dashboard/accounts/accounts.component';
+import { SubscriptionsComponent } from './features/admin-dashboard/subscriptions/subscriptions.component';
+import { AdminDashboardComponent } from './features/admin-dashboard/admin-dashboard.component';
 
 export const routes: Routes = [
   { path: "", redirectTo: "home", pathMatch: "full" },
@@ -29,17 +38,28 @@ export const routes: Routes = [
 
   { path: "checkout/:id", component: CheckoutComponent, canActivate: [AuthGuard] },
 
-  // 🔥 important: standalone component → use component: ViewFullCourseComponent
   { path: "view-full-course/:id", component: ViewFullCourseComponent, canActivate: [AuthGuard] },
 
+  {
+    path: "admin",
+    component: AdminDashboardComponent,
+    canActivate: [AuthGuard],
+    children: [
+      {path: "", component: OverviewComponent, pathMatch: "full"},
+      { path: "accounts", component: AccountsComponent },
+      { path: "create", component: CreateCourseComponent },
+      { path: "subscriptions", component: SubscriptionsComponent }
+    ]
+  },
   {
     path: "instructor",
     component: InstructorDashboardComponent,
     canActivate: [AuthGuard],
     children: [
+      {path: "", component: InstructorCoursesComponent, pathMatch: "full"},
       { path: "create", component: CreateCourseComponent },
-      { path: "quizzes", component: InstructorDashboardComponent },
-      { path: "projects", component: InstructorDashboardComponent }
+      { path: "quizzes", component: GradeQuizzesComponent },
+      { path: "projects", component: GradeProjectsComponent }
     ]
   },
 
