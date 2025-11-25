@@ -97,8 +97,9 @@ export class ViewFullCourseComponent implements OnInit {
       .subscribe({
         next: (res:any) => {
           if (this.selectedContent) {
-            if (res.questions.length > 0) {
-              this.selectedContent.questions = res.questions;
+            console.log(res)
+            if (res.length > 0) {
+              this.selectedContent.questions = res;
               this.selectedContent.showQuestions = true;
             } else {
               this.selectedContent.showQuestions = false;

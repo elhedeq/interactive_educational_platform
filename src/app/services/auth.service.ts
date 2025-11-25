@@ -43,7 +43,11 @@ export class AuthService {
     }
 
     getCredential() {
-        return this.currentUser()?.credential
+        return this.currentUser()?.credential;
+    }
+
+    getId() {
+        return this.currentUser()?.id;
     }
     
 }

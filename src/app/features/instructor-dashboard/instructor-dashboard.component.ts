@@ -25,6 +25,7 @@ export class InstructorDashboardComponent {
     if (this.authService.getCredential() != 1) {
       this.router.navigate(['/home']);
     }
+    
   }
 
   toggleSidebar() {

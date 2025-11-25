@@ -1,1 +1,106 @@
-<p>grade-quizzes works!</p>
+<div class="p-4 pr-1 wrapper">
+  <div class="row" *ngIf="!quizzes">
+    <p class="text-danger">no quizzes yet</p>
+  </div>
+  <div *ngFor="let quiz of quizzes; let i = index">
+    <div id="accordion wrapper">
+      <div class="card">
+        <div class="card-header" id="headingOne">
+          <h5 class="mb-0">
+            <button
+              class="btn btn-link"
+              data-bs-toggle="collapse"
+              [attr.data-bs-target]="'#collapse-'+i"
+              aria-expanded="true"
+              [attr.aria-controls]="'collapse-'+i"
+            >
+              Quiz: {{ quiz.name }}
+            </button>
+          </h5>
+        </div>
+  
+        <div
+          [id]="'collapse-'+i"
+          class="collapse show"
+          [attr.aria-labelledby]="'heading-'+i"
+          [attr.data-bs-parent]="'accordion'"
+        >
+          <div class="card-body">
+            <p class="card-text p-3">
+              {{ quiz.description }}
+            </p>
+            <div
+              class="question d-flex g-4 border"
+              *ngFor="let q of quiz.questions; let j = index"
+            >
+              <div class="position-relative">
+                <div>
+                  <p>Question:</p>
+                  <p class="bg-success text-white p-2">
+                    {{ q.question_text }}
+                  </p>
+                </div>
+                <div>
+                  <p>Correct Answer:</p>
+                  <p class="bg-success text-white p-2">
+                    {{ q.correct_answer }}
+                  </p>
+                </div>
+              </div>
+              <div *ngIf="q.answers">
+                <div
+                  class="border p-2"
+                  *ngFor="let answer of q.answers; let k = index"
+                >
+                  <div class="row">
+                    <div class="col-lg">
+                      <p>answer submitted:</p>
+                      <p class="bg-warning p-2">
+                        {{ answer.answer }}
+                      </p>
+                    </div>
+                    <div class="col-lg">
+                      <p>submitted by:</p>
+                      <p class="bg-warning p-2">
+                        {{ answer.student_name }}
+                      </p>
+                    </div>
+                  </div>
+                  <form class="d-flex justify-content-between align-items-center">
+                    <div class="form-group">
+                      <label for="grade">grade</label>
+                      <input
+                        type="number"
+                        name="grade"
+                        id="grade"
+                        class="form-control"
+                        [(ngModel)]="answer.grade"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="comment">comment</label>
+                      <textarea
+                        name="comment"
+                        id="comment"
+                        class="form-control"
+                        [(ngModel)]="answer.comment"
+                      >
+                      </textarea>
+                    </div>
+                    <button
+                      type="submit"
+                      (click)="submitGrade(i, j, k)"
+                      class="btn btn-primary h-50"
+                    >
+                      submit
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

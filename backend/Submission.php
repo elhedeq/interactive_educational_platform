@@ -17,6 +17,43 @@ class Submission extends mySQL_ORM{
     }
 
     /**
+     * Get all submissions for a specific course
+     * Joins Submissions -> Projects -> Course
+     * @param int $courseId
+     * @return array
+     */
+    public function getSubmissionsByCourse($courseId) {
+        $fields = "submissions.*, users.first_name, users.last_name, users.id as student_id, projects.name as project_name";
+        
+        // We need to construct a custom query because the ORM's simple join might be limited 
+        // for a 3-table join (Submissions -> Projects -> Users), 
+        // but we can use the ORM's query method directly for complex joins.
+        
+        $sql = "SELECT $fields 
+                FROM submissions 
+                JOIN projects ON submissions.project = projects.id 
+                JOIN users ON submissions.student = users.id
+                WHERE projects.course = :cid";
+                
+        $this->query($sql, ['cid' => $courseId]);
+        return $this->fetchAll();
+    }
+    
+    // --- NEW: Get all submissions for a specific project with Student Info ---
+    public function getSubmissionsByProject($projectId){
+        $this->select(
+            $this->table, 
+            'submissions.*', 
+            'project = :pid',
+            '', '', '',
+            'users', 'submissions.student = users.id', 
+            'users.first_name, users.last_name, users.email', 
+            ['pid' => $projectId]
+        );
+        return $this->fetchAll();
+    }
+
+    /**
      * get all submissions' data
      * @return array an array of all submissions' data
      */
@@ -68,7 +105,7 @@ class Submission extends mySQL_ORM{
      */
 
     public function updateSubmission($userId, $projectId, $submissionData) {
-        return $this->update($this->table, $subscriptionData,'student = :sid AND project = :pid', ['sid' => $userId, 'pid' => $projectId]);
+        return $this->update($this->table, $submissionData,'student = :sid AND project = :pid', ['sid' => $userId, 'pid' => $projectId]);
     }
 
 }

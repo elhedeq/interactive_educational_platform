@@ -5,6 +5,7 @@ import { inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Notification } from '../../services/notifications.service';
 
 @Component({
   selector: 'app-userprofile',
@@ -16,6 +17,7 @@ import { Router } from '@angular/router';
 export class UserprofileComponent {
   authService = inject(AuthService);
   http = inject(HttpClient);
+  notification = inject(Notification);
   id=this.authService.currentUser()?.id;
   name=this.authService.currentUser()?.first_name + ' ' + this.authService.currentUser()?.last_name;
   avatar=this.authService.currentUser()?.avatar;
@@ -46,7 +48,8 @@ export class UserprofileComponent {
         next: () => {
           console.log('Account deleted successfully');
           window.localStorage.removeItem('token');
-          window.alert('Your account has been deleted.');
+          this.authService.logout();
+          this.notification.showNotification('Your account has been deleted', 1000, 'success');
           this.router.navigate(['/home']);
         },
         error: (err) => {

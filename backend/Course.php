@@ -16,6 +16,47 @@ class Course extends mySQL_ORM{
         parent::__construct($dbconfig);
     }
 
+    /**
+     * Get courses created by a specific instructor
+     * @param int $authorId
+     * @return array
+     */
+    public function getCoursesByAuthor($authorId) {
+        $this->select(
+            $this->table, 
+            '*', 
+            'author = :id', 
+            '', '', '', '', '', '', 
+            ['id' => $authorId]
+        );
+        return $this->fetchAll();
+    }
+
+    /**
+     * Get courses a student is subscribed to
+     * @param int $studentId
+     * @return array
+     */
+    public function getEnrolledCourses($studentId) {
+        // We need to JOIN subscriptions to get courses
+        $fields = "courses.*, subscriptions.started_at, subscriptions.completed_at";
+        $joinTable = "subscriptions";
+        $joinPoint = "courses.id = subscriptions.course";
+        $where = "subscriptions.student = :sid";
+        
+        $this->select(
+            $this->table, 
+            $fields, 
+            $where, 
+            '', '', '', 
+            $joinTable, 
+            $joinPoint, 
+            '', 
+            ['sid' => $studentId]
+        );
+        return $this->fetchAll();
+    }
+
     // CORE COURSE CRUD OPERATIONS
 
     /**
@@ -167,8 +208,8 @@ class Course extends mySQL_ORM{
      * @param int $courseId The ID of the course
      * @return array Array of student user data
      */
-    public function getStudentsEnrolled($courseId) {
-        $main_cols = "subscriptions.started_at, subscriptions.completed_at";
+    public function getSubscriptions($courseId) {
+        $main_cols = "subscriptions.started_at, subscriptions.completed_at, subscriptions.progress";
         $join_cols = "users.id AS student_id, users.first_name, users.last_name";
 
         $this->select(
@@ -245,14 +286,21 @@ class Course extends mySQL_ORM{
 
 
     // CRUD FOR COURSE COMPONENTS (Lessons, Quizzes, Projects)
-
     /**
-     * Adds a lesson to a course.
-     * @param array $lessonData Must include 'course', 'title', 'lesson_order', etc.
-     * @return int New lesson ID
+     * Adds a new lesson to a course.
+     * @param array $data The lesson data array.
+     * @return int The ID of the newly inserted lesson.
      */
-    public function addLesson($lessonData) {
-        return $this->insert('lessons', $lessonData);
+    public function addLesson($data) {
+        // 1. Whitelist fields for the 'lessons' table (Good practice to avoid issues like this)
+        $allowedFields = ['course', 'lesson_order', 'title', 'description', 'video_url', 'thumbnail'];
+        $lessonData = array_intersect_key($data, array_flip($allowedFields));
+        
+        // 2. CRITICAL FIX: Explicitly call the ORM's insert method with the correct table name.
+        // If your ORM method is named 'insert', use it like this:
+        return $this->insert('lessons', $lessonData); // <-- This MUST specify 'lessons'
+
+        // If your ORM is structured differently, ensure the target table is 'lessons'.
     }
 
     /**
@@ -282,7 +330,11 @@ class Course extends mySQL_ORM{
      * @return int New quiz ID
      */
     public function addQuiz($quizData) {
-        return $this->insert('quizzes', $quizData);
+        // FIX: Filter out 'questions' array and other non-database fields
+        $allowedFields = ['course', 'quiz_order', 'name', 'description'];
+        $cleanData = array_intersect_key($quizData, array_flip($allowedFields));
+        
+        return $this->insert('quizzes', $cleanData);
     }
 
     /**
@@ -292,7 +344,11 @@ class Course extends mySQL_ORM{
      * @return int Affected rows
      */
     public function updateQuiz($quizId, $quizData) {
-        return $this->update('quizzes', $quizData, 'id = :id', ['id' => $quizId]);
+        // FIX: Filter out 'questions' array here too
+        $allowedFields = ['course', 'quiz_order', 'name', 'description'];
+        $cleanData = array_intersect_key($quizData, array_flip($allowedFields));
+
+        return $this->update('quizzes', $cleanData, 'id = :id', ['id' => $quizId]);
     }
 
     /**
@@ -429,10 +485,115 @@ class Course extends mySQL_ORM{
         return $result ? $result['course'] : null;
     }
 
-    public function getQuestionsForQuiz($quizId) {
-        $this->select('questions', '*', 'quiz = :qid', '', '', 'question_order ASC', '', '', '', ['qid' => $quizId]);
+    public function getQuestionsForQuiz($quizId, $includeAnswers = false) {
+        
+        $fields = "questions.id, questions.question_order, questions.quiz, questions.type, questions.head, questions.answer";
+        if ($includeAnswers) {
+            // This column contains the correct answer key, only returned for privileged users
+            $fields .= ", questions.answer"; 
+        }
+        
+        $this->select('questions', $fields, 'quiz = :qid', '', '', 'question_order ASC', '', '', '', ['qid' => $quizId]);
         return $this->fetchAll();
     }
+
+    public function getComponentParentCourse($component, $componentId) {
+        // 1. Run the query to find the course ID
+        // FIX: Used '=>' for the array and handled the return value correctly
+        $this->select($component, 'course', 'id = :id', '', '', '', '', '', '', ['id' => $componentId]);
+        
+        // 2. Fetch the actual row data
+        $result = $this->fetch();
+
+        // 3. Check if result exists before trying to get the course
+        if ($result && isset($result['course'])) {
+            // FIX: Added '$' to '$this'
+            return $this->getCourse($result['course']);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the parent course of a question.
+     * Requires joining Questions -> Quizzes -> Courses.
+     * @param int $questionId
+     * @return array|false The course data or false if not found.
+     */
+    public function getQuestionParentCourse($questionId) {
+        $sql = "SELECT courses.* FROM courses 
+                JOIN quizzes ON courses.id = quizzes.course 
+                JOIN questions ON quizzes.id = questions.quiz 
+                WHERE questions.id = :qid";
+        
+        $this->query($sql, ['qid' => $questionId]);
+        return $this->fetch();
+    }
+
+    /**
+     * Get all answers for a specific quiz, grouped by question.
+     * Structure: [ 
+     * { question_id: 1, text: "...", answers: [ {student: "Bob", answer: "..."} ] },
+     * ...
+     * ]
+     * @param int $quizId
+     * @return array
+     */
+    public function getAllQuizAnswers($quizId) {
+        // 1. Fetch flat data sorted by Question Order first
+        $sql = "SELECT 
+                    questions.id AS question_id,
+                    questions.head AS question_text,
+                    questions.question_order,
+                    questions.answer AS correct_answer,
+                    answers.answer AS student_answer,
+                    answers.grade,
+                    answers.comment,
+                    users.id AS student_id,
+                    users.first_name,
+                    users.last_name
+                FROM questions
+                LEFT JOIN answers ON questions.id = answers.question
+                LEFT JOIN users ON answers.student = users.id
+                WHERE questions.quiz = :qid
+                ORDER BY questions.question_order ASC, users.last_name ASC";
+
+        $this->query($sql, ['qid' => $quizId]);
+        $rows = $this->fetchAll();
+
+        // 2. Group by Question in PHP
+        $grouped = [];
+
+        foreach ($rows as $row) {
+            $qid = $row['question_id'];
+
+            // Initialize the question entry if not exists
+            if (!isset($grouped[$qid])) {
+                $grouped[$qid] = [
+                    'question_id' => $qid,
+                    'question_text' => $row['question_text'],
+                    'question_order' => $row['question_order'],
+                    'correct_answer' => $row['correct_answer'],
+                    'answers' => []
+                ];
+            }
+
+            // If there is an answer (LEFT JOIN might return nulls for unanswered questions), add it
+            if ($row['student_id']) {
+                $grouped[$qid]['answers'][] = [
+                    'student_id' => $row['student_id'],
+                    'student_name' => $row['first_name'] . ' ' . $row['last_name'],
+                    'answer' => $row['student_answer'],
+                    'grade' => $row['grade'],
+                    'comment' => $row['comment']
+                ];
+            }
+        }
+
+        // Reset array keys to return a clean JSON array (0, 1, 2...)
+        return array_values($grouped);
+    }
+
 }
 
 ?>

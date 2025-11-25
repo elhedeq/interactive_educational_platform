@@ -180,6 +180,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'users') {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Must be authenticated
 
+    // NEW: GET /users/{id}/created-courses
+    if (getRoutePart(2) && getRoutePart(3) === 'created-courses') {
+        $userId = getRouteId(2);
+        
+        // Auth: User can see own, or Admin/Instructor can see others
+        if ($authUser['id'] != $userId && $authUser['credential'] < 2) {
+             // Optional: allow students to see an instructor's courses publicly? 
+             // If so, remove this check. If private, keep it.
+        }
+
+        $courses = $courseService->getCoursesByAuthor($userId);
+        http_response_code(200);
+        echo json_encode($courses);
+        exit();
+    }
+
+    // NEW: GET /users/{id}/enrolled-courses
+    if (getRoutePart(2) && getRoutePart(3) === 'enrolled-courses') {
+        $userId = getRouteId(2);
+
+        // Auth: User can only see their own enrollments, unless Admin
+        if ($authUser['id'] != $userId && $authUser['credential'] < 2) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied.']);
+            exit();
+        }
+
+        $courses = $courseService->getEnrolledCourses($userId);
+        http_response_code(200);
+        echo json_encode($courses);
+        exit();
+    }
+
     if (getRoutePart(2)) {
         // GET /users/{id} - Get specific user
         $userId = getRouteId(2);
@@ -437,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'courses') {
         $isEnrolled = $isAuthenticated ? $subscriptionService->getSubscription($authUser['id'], $courseId) : false;
 
         // Content retrieval: lessons, quizzes, projects, students
-        if (isset($parts[4])) {
+        if (getRoutePart(3)) {
             // Rule: Must be Authenticated (0+), Admin (2), Author (1+), OR Enrolled Student (0+)
             if (!$isAuthenticated) {
                 http_response_code(401);
@@ -461,14 +494,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'courses') {
                 case 'project':
                     $data = $courseService->getProject($courseId);
                     break;
+                case 'subscriptions':
                 case 'students':
-                    // Rule: Only Author (1+) or Admin (2) can see the list of enrolled students
+                    // Only Author or Admin
                     if (!$isAdmin && !$isAuthor) {
                         http_response_code(403);
-                        echo json_encode(['error' => 'Access denied. Only the course author or an admin can view the student list.']);
+                        echo json_encode(['error' => 'Access denied.']);
                         exit();
                     }
-                    $data = $courseService->getStudentsEnrolled($courseId);
+                    // This method in Course.php returns User info + Subscription dates
+                    $data = $courseService->getSubscriptions($courseId);
+                    break;
+
+                // NEW: GET /courses/{id}/submissions
+                case 'submissions':
+                    // Only Author or Admin can see submissions
+                     if (!$isAdmin && !$isAuthor) {
+                        http_response_code(403);
+                        echo json_encode(['error' => 'Access denied. Only instructors can view submissions.']);
+                        exit();
+                    }
+                    // This method (in Submission.php) fetches all submissions for the course
+                    $data = $submissionService->getSubmissionsByCourse($courseId);
                     break;
                 default:
                     http_response_code(404);
@@ -505,12 +552,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'courses') {
 }
 
 // --- POST Course ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) === 'courses') {
+// Added check: && !getRoutePart(2) to ensure we aren't targeting a sub-resource like /courses/1/lessons
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) === 'courses' && !getRoutePart(2)) {
     $authUser = getAuthUser($userService);
-    checkAuth(1, $authUser); // Rule: Instructor (1+) can create courses
+    checkAuth(1, $authUser); 
 
     $data = json_decode(file_get_contents('php://input'), true);
-    $data['author'] = $authUser['id']; // Set author from authenticated user
+    $data['author'] = $authUser['id']; 
 
     $newId = $courseService->addCourse($data);
 
@@ -537,10 +585,10 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && getRoutePart(1) =
     }
 
     // Determine if it's a course or a component operation
-    if (isset($parts[4])) {
+    if (getRoutePart(3)) {
         // Component Operation (lessons, quizzes, projects)
-        $componentType = $parts[4];
-        $componentId = (int)($parts[5] ?? null);
+        $componentType = getRoutePart(3);
+        $componentId = (int)(getRoutePart(4) ?? null);
 
         if (!$componentId) {
             http_response_code(400);
@@ -573,6 +621,9 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && getRoutePart(1) =
         if ($result > 0) {
             http_response_code(200);
             echo json_encode(['message' => ucfirst($componentType) . ' ' . $_SERVER['REQUEST_METHOD'] . 'd successfully.']);
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            http_response_code(200); 
+            echo json_encode(['message' => 'No changes made to course.']);
         } else {
             http_response_code(404);
             echo json_encode(['error' => ucfirst($componentType) . ' not found or no changes made.']);
@@ -584,35 +635,43 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && getRoutePart(1) =
         $data = $_SERVER['REQUEST_METHOD'] === 'PUT' ? json_decode(file_get_contents('php://input'), true) : [];
         $result = $courseService->$serviceMethod($courseId, $data);
 
+        // If it's a PUT (update) and result is 0, it means no changes were made, but the course exists.
         if ($result > 0) {
             http_response_code(200);
             echo json_encode(['message' => 'Course ' . $_SERVER['REQUEST_METHOD'] . 'd successfully.']);
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            // Course exists (checked at line 259) but data was identical
+            http_response_code(200); 
+            echo json_encode(['message' => 'No changes made to course.']);
         } else {
+            // Only return 404 if it's a DELETE that failed (or truly not found logic)
             http_response_code(404);
-            echo json_encode(['error' => 'Course not found or no changes made.']);
+            echo json_encode(['error' => 'Course not found or operation failed.']);
         }
     }
     exit();
 }
 
 // --- POST Component (Lessons, Quizzes, Projects) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === 'courses' && isset($parts[3]) && isset($parts[4])) {
+// FIX: Changed to use getRoutePart() and correct indices (1=courses, 2=id, 3=component)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) === 'courses' && is_numeric(getRoutePart(2)) && getRoutePart(3)) {
     $authUser = getAuthUser($userService);
-    checkAuth(1, $authUser); // Rule: Instructor (1+) can add components
+    checkAuth(1, $authUser); 
 
-    $courseId = (int)$parts[3];
+    // FIX: Get ID from index 2, not 3
+    $courseId = (int)getRoutePart(2); 
     $course = $courseService->getCourse($courseId);
 
     if (!$course) { http_response_code(404); echo json_encode(['error' => 'Course not found.']); exit(); }
 
-    // Ownership Check
     if ($authUser['credential'] < 2 && $authUser['id'] != $course['author']) {
         http_response_code(403);
         echo json_encode(['error' => 'Access denied. You can only add components to courses you authored.']);
         exit();
     }
 
-    $componentType = $parts[4];
+    // FIX: Get Type from index 3, not 4
+    $componentType = getRoutePart(3); 
     $data = json_decode(file_get_contents('php://input'), true);
     $data['course'] = $courseId;
 
@@ -637,108 +696,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === '
     exit();
 }
 
+
 // QUIZ/QUESTION/ANSWER API
 
-// --- GET Quiz Questions and Student Progress ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($parts[2]) && $parts[2] === 'quizzes' && isset($parts[3]) && $parts[4] === 'questions') {
-    $quizId = (int)$parts[3];
-
+// --- GET Quiz Questions (/quizzes/{id}/questions) ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'quizzes' && is_numeric(getRoutePart(2)) && getRoutePart(3) === 'questions') {
+    $quizId = getRoutePart(2);
     $authUser = getAuthUser($userService);
-    checkAuth(0, $authUser); // Rule: Must be authenticated (0+) to view content
+    
+    // 1. Check Authentication (must be logged in)
+    checkAuth(0, $authUser);
+    $isAdmin = $authUser['credential'] == 2;
 
-    // Check enrollment/ownership for content viewing
-    $parent = $courseService->getComponentParentCourse('quizzes', $quizId);
-    if (!$parent) { http_response_code(404); echo json_encode(['error' => 'Quiz not found.']); exit(); }
+    // 2. Find Course ID associated with the Quiz (Required for Auth Check)
+    $courseId = $courseService->getCourseIdByQuizId($quizId);
 
-    $isAuthor = ($authUser['id'] == $parent['author']);
-    $isAdmin = ($authUser['credential'] == 2);
-    $isEnrolled = $subscriptionService->getSubscription($authUser['id'], $parent['course']);
-
-    if (!$isAdmin && !$isAuthor && !$isEnrolled) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Access denied. Must be the course author or an enrolled student to view quiz content.']);
+    if (!$courseId) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Quiz or associated course not found.']);
         exit();
     }
+    
+    // 3. Find the Course Author ID to check instructor access
+    $course = $courseService->getCourse($courseId);
+    $isAuthor = $course && ($authUser['id'] == $course['author']);
 
-    if (isset($parts[5]) && $parts[5] === 'progress' && isset($parts[6])) {
-        // GET /quizzes/{id}/questions/progress/{studentId} (Instructor/Admin only, or student checking self)
-        $studentId = (int)$parts[6];
-
-        if (!$isAdmin && !$isAuthor) {
-            // Students can only check their own progress
-            if ($authUser['id'] != $studentId) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Access denied. You can only view your own quiz progress.']);
-                exit();
-            }
-        }
-        $data = $courseService->getStudentQuizProgress($quizId, $studentId);
+    // 4. Determine access and if answers should be included
+    $isSubscribed = $subscriptionService->getSubscription($authUser['id'], $courseId);
+    $includeAnswers = false;
+    
+    if ($isAdmin || $isAuthor) {
+        // ADMIN or AUTHOR access: Include answers
+        $includeAnswers = true;
+    } elseif ($isSubscribed) {
+        // SUBSCRIBED STUDENT access: Do NOT include answers
+        $includeAnswers = false; 
     } else {
-        // GET /quizzes/{id}/questions (Questions for the quiz)
-        $data = $courseService->getQuizQuestions($quizId);
+        // Deny Access
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied. Must be Admin, Instructor, or Enrolled Student.']);
+        exit();
     }
+    
+    // 5. Retrieve Questions
+    $questions = $courseService->getQuestionsForQuiz($quizId, $includeAnswers); 
 
     http_response_code(200);
-    echo json_encode($data);
+    echo json_encode($questions);
     exit();
 }
 
-// --- POST Question ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($parts[2]) && $parts[2] === 'quizzes' && isset($parts[3]) && $parts[4] === 'questions') {
-    $authUser = getAuthUser($userService);
-    checkAuth(1, $authUser); // Rule: Instructor (1+) can create questions
-
-    $quizId = (int)$parts[3];
-
-    // Ownership Check: Check the parent course of the quiz
-    $parent = $courseService->getComponentParentCourse('quizzes', $quizId);
-    if (!$parent) { http_response_code(404); echo json_encode(['error' => 'Quiz not found.']); exit(); }
-
-    if ($authUser['credential'] < 2 && $authUser['id'] != $parent['author']) {
-        http_response_code(403);
-        echo json_encode(['error' => 'Access denied. You can only add questions to quizzes you authored.']);
-        exit();
-    }
-
-    $data = json_decode(file_get_contents('php://input'), true);
-    $data['quiz'] = $quizId;
-
-    $newId = $courseService->addQuestion($data);
-    http_response_code(201);
-    echo json_encode(['message' => 'Question created successfully.', 'id' => $newId]);
-    exit();
-}
-
-// --- PUT/DELETE Question ---
-if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && isset($parts[2]) && $parts[2] === 'questions' && isset($parts[3])) {
-    $authUser = getAuthUser($userService);
-    checkAuth(1, $authUser); // Rule: Instructor (1+) can edit/delete questions
-
-    $questionId = (int)$parts[3];
-
-    // Ownership Check: Check the parent course of the question
-    checkOwnership($courseService, $authUser, 'questions', $questionId);
-
-    $serviceMethod = $_SERVER['REQUEST_METHOD'] === 'PUT' ? 'updateQuestion' : 'deleteQuestion';
-    $data = $_SERVER['REQUEST_METHOD'] === 'PUT' ? json_decode(file_get_contents('php://input'), true) : [];
-    $result = $courseService->$serviceMethod($questionId, $data);
-
-    if ($result > 0) {
-        http_response_code(200);
-        echo json_encode(['message' => 'Question ' . $_SERVER['REQUEST_METHOD'] . 'd successfully.']);
-    } else {
-        http_response_code(404);
-        echo json_encode(['error' => 'Question not found or no changes made.']);
-    }
-    exit();
-}
 
 // --- POST/PUT/DELETE Answer ---
-if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE']) && isset($parts[2]) && $parts[2] === 'questions' && isset($parts[3]) && $parts[4] === 'answer') {
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE']) && getRoutePart(1) && getRoutePart(1) === 'questions' && getRoutePart(2) && getRoutePart(3) === 'answer') {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Rule: Must be authenticated (0+)
 
-    $questionId = (int)$parts[3];
+    $questionId = (int)getRoutePart(2);
     $studentId = $authUser['id'];
 
     // Find parent course for enrollment/ownership check
@@ -747,7 +761,7 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE']) && isset($pa
 
     $isAuthor = ($authUser['id'] == $parent['author']);
     $isAdmin = ($authUser['credential'] == 2);
-    $isEnrolled = $subscriptionService->getSubscription($authUser['id'], $parent['course']);
+    $isEnrolled = $subscriptionService->getSubscription($authUser['id'], $parent['name']);
 
     // Check if the user is authorized to interact with this question
     if (!$isAdmin && !$isAuthor && !$isEnrolled) {
@@ -791,6 +805,9 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE']) && isset($pa
         if ($result > 0) {
             http_response_code(200);
             echo json_encode(['message' => 'Answer updated successfully.']);
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            http_response_code(200); 
+            echo json_encode(['message' => 'No changes made to answer.']);
         } else {
             http_response_code(404);
             echo json_encode(['error' => 'Answer not found or no changes made.']);
@@ -821,6 +838,57 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE']) && isset($pa
     }
     exit();
 }
+
+// --- POST Question ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && getRoutePart(1) && getRoutePart(1) === 'quizzes' && getRoutePart(2) && getRoutePart(3) === 'questions') {
+    $authUser = getAuthUser($userService);
+    checkAuth(1, $authUser); // Rule: Instructor (1+) can create questions
+
+    $quizId = (int)getRoutePart(2);
+
+    // Ownership Check: Check the parent course of the quiz
+    $parent = $courseService->getComponentParentCourse('quizzes', $quizId);
+    if (!$parent) { http_response_code(404); echo json_encode(['error' => 'Quiz not found.']); exit(); }
+
+    if ($authUser['credential'] < 2 && $authUser['id'] != $parent['author']) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied. You can only add questions to quizzes you authored.']);
+        exit();
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $data['quiz'] = $quizId;
+
+    $newId = $courseService->addQuestion($data);
+    http_response_code(201);
+    echo json_encode(['message' => 'Question created successfully.', 'id' => $newId]);
+    exit();
+}
+
+// --- PUT/DELETE Question ---
+if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE']) && getRoutePart(1) && getRoutePart(1) === 'questions' && getRoutePart(2)) {
+    $authUser = getAuthUser($userService);
+    checkAuth(1, $authUser); // Rule: Instructor (1+) can edit/delete questions
+
+    $questionId = (int)getRoutePart(2);
+
+    // Ownership Check: Check the parent course of the question
+    checkOwnership($courseService, $authUser, 'questions', $questionId);
+
+    $serviceMethod = $_SERVER['REQUEST_METHOD'] === 'PUT' ? 'updateQuestion' : 'deleteQuestion';
+    $data = $_SERVER['REQUEST_METHOD'] === 'PUT' ? json_decode(file_get_contents('php://input'), true) : [];
+    $result = $courseService->$serviceMethod($questionId, $data);
+
+    if ($result > 0) {
+        http_response_code(200);
+        echo json_encode(['message' => 'Question ' . $_SERVER['REQUEST_METHOD'] . 'd successfully.']);
+    } else {
+        http_response_code(404);
+        echo json_encode(['error' => 'Question not found or no changes made.']);
+    }
+    exit();
+}
+
 
 // SUBSCRIPTION API (/subscriptions)
 
@@ -915,12 +983,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === 'submissions') {
 }
 
 // --- PUT Submission (Update URL or Grade) ---
-if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $endpoint === 'submissions' && isset($parts[3])) {
+if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $endpoint === 'submissions' && getRoutePart(2)) {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Rule: Registered users (0+) can update/grade
 
     // URL format: /submissions/{projectId}
-    $projectId = (int)$parts[3];
+    $projectId = (int)getRoutePart(2);
     $data = json_decode(file_get_contents('php://input'), true);
 
     // Identify if the update is a re-submission (student) or a grade/comment (instructor/admin)
@@ -968,12 +1036,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $endpoint === 'submissions' && isset
 }
 
 // --- DELETE Submission ---
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && $endpoint === 'submissions' && isset($parts[3])) {
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && $endpoint === 'submissions' && getRoutePart(2)) {
     $authUser = getAuthUser($userService);
     checkAuth(0, $authUser); // Rule: Registered users (0+) can delete
 
     // URL format: /submissions/{projectId}
-    $projectId = (int)$parts[3];
+    $projectId = (int)getRoutePart(2);
     $studentId = $authUser['id']; // Default to authenticated user
 
     // If an Admin (2) is logged in, they can potentially delete anyone's submission
@@ -1067,6 +1135,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'quizzes' && is_
 
     http_response_code(200);
     echo json_encode(['questions' => $questions]);
+    exit();
+}
+
+// --- GET All Quiz Answers (Instructor/Admin Only) ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && getRoutePart(1) === 'quizzes' && is_numeric(getRoutePart(2)) && getRoutePart(3) === 'all-answers') {
+    $quizId = (int)getRoutePart(2);
+    $authUser = getAuthUser($userService);
+    
+    // 1. Authentication Check: Must be Instructor (1) or Admin (2)
+    checkAuth(1, $authUser);
+
+    // 2. Retrieve Course ID to verify ownership
+    $courseId = $courseService->getCourseIdByQuizId($quizId);
+    if (!$courseId) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Quiz not found.']);
+        exit();
+    }
+    
+    // 3. Ownership Check
+    // Admins (2) can see everything. Instructors (1) must own the course.
+    if ($authUser['credential'] < 2) {
+        $course = $courseService->getCourse($courseId);
+        if ($authUser['id'] != $course['author']) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied. You can only view answers for your own courses.']);
+            exit();
+        }
+    }
+
+    // 4. Fetch and Return Data
+    $data = $courseService->getAllQuizAnswers($quizId);
+    
+    http_response_code(200);
+    echo json_encode($data);
     exit();
 }
 

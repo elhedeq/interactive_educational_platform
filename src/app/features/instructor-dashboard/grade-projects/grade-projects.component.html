@@ -1,1 +1,46 @@
-<p>grade-projects works!</p>
+<div class="container p-4 pr-1 m-3 w-100">
+    <div class="row" *ngIf="!project">
+        <p class="text-danger">
+            no projects yet
+        </p>
+    </div>
+    <div class="project row">
+        <div class="col-sm-6">
+            <div class="card-body">
+                <h5 class="card-title text-capitalize">project: {{ project.name }}</h5>
+                <p class="card-text p-3">
+                    {{ project.description }}
+                </p>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <p class="number">{{getTotalSubmissions()}}</p>
+            <p class="unit">submissions</p>
+        </div>
+        <div class="p-5" *ngIf="submissions">
+            <div class="border p-5" *ngFor="let sub of submissions; let j = index">
+                <div class="d-flex justify-content-between">
+                    <div class="text-capitalize">
+                        student: {{sub.first_name + ' ' + sub.last_name}}
+                    </div>
+                    <div>
+                        <a [href]="sub.url" target="_blank" class="btn btn-primary text-capitalize">download submission</a>
+                    </div>
+                </div>
+                <form class="d-flex justify-content-between align-items-center">
+                    <div class="form-group">
+                        <label for="grade">grade</label>
+                        <input type="number" name="grade" id="grade" class="form-control" [(ngModel)]="sub.grade">
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">comment</label>
+                        <textarea name="comment" id="comment" class="form-control" [(ngModel)]="sub.comment">
+                        </textarea>
+                    </div>
+                    <button type="submit" (click)="submitGrade(j)" class="btn btn-primary h-50">submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,6 +1,8 @@
 <div class="container p-5 m-3">
-  <h1>Create Newcourse</h1>
-  <form>
+  <h1 *ngIf="operation === 'create'">Create New course</h1>
+  <h1 *ngIf="operation === 'edit'">edit course: {{ name }}</h1>
+
+  <form id="course">
     <div class="form-group">
       <label for="name" class="text-capitalize">course name</label>
       <input
@@ -41,6 +43,185 @@
         [(ngModel)]="category"
       />
     </div>
+    <div class="form-group">
+      <label for="thumbnail" class="text-capitalize">thumbnail</label>
+      <input
+        type="file"
+        class="form-control"
+        name="thumbnail"
+      />
+    </div>
+    <button class="btn m-2 btn-primary text-capitalize" (click)="submitCourseData()">next</button>
   </form>
 
+
+  <form id="lessons" class=" p-5">
+    <div *ngIf="lessons">
+      <div class="lesson border p-5" *ngFor="let lesson of lessons; let i = index">
+        <h4>lesson {{i+1}}</h4>
+        <input type="hidden" [name]="'lesson_order'+i" [(ngModel)]="lesson.lesson_order">
+        <div class="form-group">
+          <label [for]="'lesson_title'+i" class="text-capitalize">lesson title</label>
+          <input
+            type="text"
+            class="form-control"
+            [name]="'lesson_title'+i"
+            placeholder="enter lesson title"
+            [(ngModel)]="lesson.title"
+          />
+        </div>
+        <div class="form-group">
+          <label [for]="'lesson_description'+i" class="text-capitalize">lesson description</label>
+          <textarea
+            type="text"
+            class="form-control"
+            [name]="'lesson_description'+i"
+            placeholder="enter lesson description"
+            [(ngModel)]="lesson.description"
+          >
+          </textarea>
+        </div>
+        <div class="form-group">
+          <label for="lesson_thumbnail" class="text-capitalize">lesson thumbnail</label>
+          <input
+            type="file"
+            class="form-control"
+            name="lesson_thumbnail"
+          />
+        </div>
+        <div class="form-group">
+          <label [for]="'lesson_video_url'+i" class="text-capitalize">video url</label>
+          <input
+            type="text"
+            class="form-control"
+            [name]="'lesson_video_url'+i"
+            placeholder="enter lesson video url"
+            [(ngModel)]="lesson.url"
+          />
+        </div>
+  
+        <button class="btn m-2 btn-danger text-capitalize" (click)="removeLesson(i)">remove</button>
+        <button class="btn m-2 btn-success text-capitalize" (click)="saveLesson(i, $event)">save</button>
+      </div>
+    </div>
+    <button class="btn m-2 btn-primary text-capitalize " (click)="addLessonForm()">+ add lesson</button>
+    <button class="btn m-2 btn-primary text-capitalize" (click)="switchForm(3)">next</button>
+  </form>
+
+  <form id="quizzes" class=" p-5">
+    <div *ngIf="quizzes">
+      <div class="quiz border p-5" *ngFor="let quiz of quizzes; let i = index">
+        <h4>quiz {{i+1}}</h4>
+        <input type="hidden" [name]="'quiz_order'+i" [(ngModel)]="quiz.quiz_order">
+        <div class="form-group">
+          <label [for]="'quiz_name'+i" class="text-capitalize">quiz name</label>
+          <input
+            type="text"
+            class="form-control"
+            [name]="'quiz_name'+i"
+            placeholder="enter quiz name"
+            [(ngModel)]="quiz.name"
+          />
+        </div>
+        <div class="form-group">
+          <label [for]="'quiz_description'+i" class="text-capitalize">quiz description</label>
+          <textarea
+            type="text"
+            class="form-control"
+            [name]="'quiz_description'+i"
+            placeholder="enter quiz description"
+            [(ngModel)]="quiz.description"
+          >
+          </textarea>
+        </div>
+          <div class="p-5" *ngFor="let question of quiz.questions;let j = index">
+            <input type="hidden" [name]="'question_order'+j" [(ngModel)]="question.question_order">
+            
+            <div class="form-group">
+              <label [for]="'question_head'+j" class="text-capitalize">question head</label>
+              <textarea
+                type="text"
+                class="form-control"
+                [name]="'question_head'+j"
+                placeholder="enter question"
+                [(ngModel)]="question.head"
+              >
+              </textarea>
+            </div>
+            <div class="form-group">
+              <label [for]="'correct_answer'+j" class="text-capitalize">correct answer</label>
+              <textarea
+                type="text"
+                class="form-control"
+                [name]="'correct_answer'+j"
+                placeholder="enter correct answer"
+                [(ngModel)]="question.answer"
+              >
+              </textarea>
+            </div>
+  
+            <button class="btn m-2 btn-danger text-capitalize " (click)="removeQuestion(i,j)">remove question</button>
+          </div>
+          <button class="btn m-2 btn-primary text-capitalize " (click)="addQuestionForm(i)">+ add question</button>
+  
+        <button class="btn m-2 btn-danger text-capitalize" (click)="removeQuiz(i)">remove quiz</button>
+        <button class="btn m-2 btn-success text-capitalize" (click)="saveQuiz(i, $event)">save quiz</button>
+      </div>
+    </div>
+    <button class="btn m-2 btn-primary text-capitalize " (click)="addQuizForm()">+ add quiz</button>
+    <button class="btn m-2 btn-primary text-capitalize " (click)="switchForm(4)">next</button>
+  </form>
+
+  <form id="project" class=" p-5">
+    <div *ngIf="projects.length">
+      <div class="project border p-5" *ngFor="let project of projects; let i = index">
+        <div class="form-group">
+          <label for="project_name" class="text-capitalize">project name</label>
+          <input
+            type="text"
+            class="form-control"
+            name="project_name"
+            placeholder="enter project name"
+            [(ngModel)]="project.name"
+          />
+        </div>
+        <div class="form-group">
+          <label for="project_description" class="text-capitalize">project description</label>
+          <textarea
+            type="text"
+            class="form-control"
+            name="project_description"
+            placeholder="enter lesson description"
+            [(ngModel)]="project.description"
+          >
+          </textarea>
+        </div>
+        <button class="btn m-2 btn-success text-capitalize" (click)="saveProject()">save</button>
+      </div>
+    </div>
+    <div *ngIf="!projects.length">
+        <div class="form-group">
+          <label for="project_name" class="text-capitalize">project name</label>
+          <input
+            type="text"
+            class="form-control"
+            name="project_name"
+            placeholder="enter project name"
+            [(ngModel)]="newProject.name"
+          />
+        </div>
+        <div class="form-group">
+          <label for="project_description" class="text-capitalize">project description</label>
+          <textarea
+            type="text"
+            class="form-control"
+            name="project_description"
+            placeholder="enter lesson description"
+            [(ngModel)]="newProject.description"
+          >
+          </textarea>
+        </div>
+        <button class="btn m-2 btn-success text-capitalize" (click)="saveProject()">save</button>
+      </div>
+  </form>
 </div>

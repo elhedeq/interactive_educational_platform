@@ -48,6 +48,7 @@ export const routes: Routes = [
       {path: "", component: OverviewComponent, pathMatch: "full"},
       { path: "accounts", component: AccountsComponent },
       { path: "create", component: CreateCourseComponent },
+      { path: "create/:id", component: CreateCourseComponent },
       { path: "subscriptions", component: SubscriptionsComponent }
     ]
   },
@@ -57,9 +58,10 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       {path: "", component: InstructorCoursesComponent, pathMatch: "full"},
-      { path: "create", component: CreateCourseComponent },
-      { path: "quizzes", component: GradeQuizzesComponent },
-      { path: "projects", component: GradeProjectsComponent }
+      { path: "course", component: CreateCourseComponent },
+      { path: "course/:id", component: CreateCourseComponent },
+      { path: "quizzes/:id", component: GradeQuizzesComponent },
+      { path: "project/:id", component: GradeProjectsComponent }
     ]
   },
 

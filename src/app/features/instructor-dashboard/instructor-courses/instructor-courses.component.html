@@ -1,65 +1,35 @@
 <div class="container p-4 pr-1 m-3 w-100">
-    <div class="course row">
+    <div class="course row" *ngIf="noCourses()">
+        <p class="text-danger">
+            no courses yet
+        </p>
+    </div>
+    <div class="course row" *ngFor="let course of courses; let i = index">
         <div class="col-sm-6">
             <div class="card-body">
-                <h5 class="card-title text-capitalize">python fundamentals</h5>
-                <i class="card-subtitle tag">programming</i>
-                <i class="card-subtitle tag">python</i>
+                <h5 class="card-title text-capitalize">{{ course.name }}</h5>
+                <i class="card-subtitle tag">{{ course.category }}</i>
                 <p class="card-text p-3">
-                    Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quasi, quidem aliquam deserunt laboriosam, voluptas praesentium excepturi inventore expedita exercitationem similique cumque, voluptates obcaecati ratione deleniti maiores atque quos reiciendis alias.
+                    {{ course.description }}
                 </p>
-                <a class="card-link text-capitalize">edit</a>
+                <div>
+                    <a class="text-capitalize m-2 card-link" [routerLink]="['/instructor/quizzes', course.id]">grade quizzes</a>
+                    <a class="text-capitalize m-2 card-link" [routerLink]="['/instructor/project', course.id]">grade project</a>
+                </div>
+                <div>
+                    <a class="text-capitalize m-2 btn btn-outline-warning" [routerLink]="['/instructor/course', course.id]">edit</a>
+                    <a class="text-capitalize m-2 btn btn-outline-danger" (click)="deleteCourse(course.id)">delete</a>
+                </div>
             </div>
         </div>
         <div class="enroll col-sm-3">
-            <p class="number">5000</p>
+            <p class="number">{{getTotalSubs(i)}}</p>
             <p class="unit">enrollments</p>
         </div>
         <div class="complete col-sm-3">
-            <p class="number">50%</p>
+            <p class="number">{{getCompletionRate(i)}}%</p>
             <p class="unit">completion rate</p>
         </div>
     </div>
-    <div class="course row">
-        <div class="col-sm-6">
-            <div class="card-body">
-                <h5 class="card-title text-capitalize">Java fundamentals</h5>
-                <i class="card-subtitle tag">programming</i>
-                <i class="card-subtitle tag">java</i>
-                <p class="card-text p-3">
-                    Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quasi, quidem aliquam deserunt laboriosam, voluptas praesentium excepturi inventore expedita exercitationem similique cumque, voluptates obcaecati ratione deleniti maiores atque quos reiciendis alias.
-                </p>
-                <a class="card-link text-capitalize">edit</a>
-            </div>
-        </div>
-        <div class="enroll col-sm-3">
-            <p class="number">3000</p>
-            <p class="unit">enrollments</p>
-        </div>
-        <div class="complete col-sm-3">
-            <p class="number">80%</p>
-            <p class="unit">completion rate</p>
-        </div>
-    </div>
-    <div class="course row">
-        <div class="col-sm-6">
-            <div class="card-body">
-                <h5 class="card-title text-capitalize">JavaScript fundamentals</h5>
-                <i class="card-subtitle tag">programming</i>
-                <i class="card-subtitle tag">JavaScript</i>
-                <p class="card-text p-3">
-                    Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quasi, quidem aliquam deserunt laboriosam, voluptas praesentium excepturi inventore expedita exercitationem similique cumque, voluptates obcaecati ratione deleniti maiores atque quos reiciendis alias.
-                </p>
-                <a class="card-link text-capitalize">edit</a>
-            </div>
-        </div>
-        <div class="enroll col-sm-3">
-            <p class="number">6000</p>
-            <p class="unit">enrollments</p>
-        </div>
-        <div class="complete col-sm-3">
-            <p class="number">40%</p>
-            <p class="unit">completion rate</p>
-        </div>
-    </div>
+    
 </div>
