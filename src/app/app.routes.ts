@@ -23,7 +23,6 @@ import { GradeQuizzesComponent } from './features/instructor-dashboard/grade-qui
 import { GradeProjectsComponent } from './features/instructor-dashboard/grade-projects/grade-projects.component';
 import { OverviewComponent } from './features/admin-dashboard/overview/overview.component';
 import { AccountsComponent } from './features/admin-dashboard/accounts/accounts.component';
-import { SubscriptionsComponent } from './features/admin-dashboard/subscriptions/subscriptions.component';
 import { AdminDashboardComponent } from './features/admin-dashboard/admin-dashboard.component';
 
 export const routes: Routes = [
@@ -47,9 +46,8 @@ export const routes: Routes = [
     children: [
       {path: "", component: OverviewComponent, pathMatch: "full"},
       { path: "accounts", component: AccountsComponent },
-      { path: "create", component: CreateCourseComponent },
-      { path: "create/:id", component: CreateCourseComponent },
-      { path: "subscriptions", component: SubscriptionsComponent }
+      { path: "course/:id", component: CreateCourseComponent },
+      { path: "courses", component: CoursesComponent, data: { role: 'admin' } }
     ]
   },
   {

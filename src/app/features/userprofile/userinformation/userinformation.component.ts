@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Notification } from '../../../services/notifications.service';
 
 @Component({
   selector: 'app-userinformation',
@@ -13,6 +14,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class UserinformationComponent implements OnInit {
   http = inject(HttpClient);
+  notification = inject(Notification);
   first_name='';
   last_name='';
   email='';
@@ -72,7 +74,8 @@ export class UserinformationComponent implements OnInit {
           }
       },
       error:(err)=>{
-        console.log('Error getting user info',err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('Error getting user info',err);
       }
     })
 
@@ -80,6 +83,7 @@ export class UserinformationComponent implements OnInit {
 
   saveChanges(){
     if (!this.selectedyear || !this.selectedmonth || !this.dayselected) {
+        this.notification.showNotification('data is incomplete',1000,'danger');
         console.error("Date incomplete");
         return;
     }
@@ -101,10 +105,11 @@ export class UserinformationComponent implements OnInit {
     this.http.put(`http://localhost/backend/api.php/users/${this.id}`, updatedData)
     .subscribe({
       next:(response)=>{
-        console.log('User information updated successfully',response);
+        this.notification.showNotification('your info was updated successfully',1000,'success');
       },
       error:(err)=>{
-        console.log('Error updating user information',err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('Error updating user information',err);
       }
     });
   }

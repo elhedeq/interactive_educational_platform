@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Notification } from '../../services/notifications.service';
 
 @Component({
   selector: 'app-course-details',
@@ -12,7 +13,7 @@ import { inject } from '@angular/core';
   styleUrls: ['./course-details.component.css']
 })
 export class CourseDetailsComponent implements OnInit {
-
+  notification = inject(Notification);
   http = inject(HttpClient);
   course:any = null;
   
@@ -25,6 +26,7 @@ export class CourseDetailsComponent implements OnInit {
         this.course = response;
       },
       error: (err) => {
+        this.notification.showNotification('somthing went wrong',1000,'danger');
         console.error('Error fetching course details:', err);
       }
     })

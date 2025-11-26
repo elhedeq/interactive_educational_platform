@@ -5,6 +5,8 @@ import { inject } from '@angular/core'
 import { AuthService } from '../../services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Notification } from '../../services/notifications.service';
+import { FormsModule } from '@angular/forms';
 
 interface Course {
   id: number;
@@ -17,18 +19,18 @@ interface Course {
   instructor_last_name: string;
 }
 
-type Question = {id: number; question_order: number; type: number; head: string; answer: string; quiz: number}
+type Question = {id: number; question_order: number; type: number; head: string; answer: string; quiz: number; student_answer?:string}
 
-type LessonContent = { id: number; order: number; type: 'lesson'; name: string; description: string; thumbnail?: string; url: string; course: number; questions?: Question[]; showQuestions?: boolean };
-type QuizContent = { id: number; order: number; type: 'quiz'; name: string; description: string; thumbnail?: string; url?: string; course: number; questions?: Question[]; showQuestions?: boolean };
-type ProjectContent = { id: number; name: string; description: string;  thumbnail?: string; url?: string; course: number; type: 'project'; questions?: Question[]; showQuestions?: boolean };
+type LessonContent = { id: number; order: number; type: 'lesson'; name: string; description: string; thumbnail?: string; url: string; course: number; questions?: Question[]; showQuestions?: boolean; project_url?:string };
+type QuizContent = { id: number; order: number; type: 'quiz'; name: string; description: string; thumbnail?: string; url?: string; course: number; questions?: Question[]; showQuestions?: boolean; project_url?:string };
+type ProjectContent = { id: number; name: string; description: string;  thumbnail?: string; url?: string; course: number; type: 'project'; project_url?:string; questions?: Question[]; showQuestions?: boolean };
 
 type CourseContent = LessonContent | QuizContent | ProjectContent;
 
 @Component({
   selector: 'app-view-full-course',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './view-full-course.component.html',
   styleUrls: ['./view-full-course.component.css']
 })
@@ -37,6 +39,7 @@ export class ViewFullCourseComponent implements OnInit {
 
   authService = inject(AuthService);
   http = inject(HttpClient);
+  notification = inject(Notification);
   course!: Course;
 
   lessons: LessonContent[] = [];
@@ -79,6 +82,7 @@ export class ViewFullCourseComponent implements OnInit {
         this.resetVideo();
       },
       error: (err) => {
+        this.notification.showNotification('somthing went wrong',1000,'danger');
         console.error('Error fetching course data:', err);
         if (err.status === 403) {
           this.router.navigate(['/home']); 
@@ -97,9 +101,9 @@ export class ViewFullCourseComponent implements OnInit {
       .subscribe({
         next: (res:any) => {
           if (this.selectedContent) {
-            console.log(res)
             if (res.length > 0) {
               this.selectedContent.questions = res;
+              this.selectedContent.questions?.forEach(q=> q.student_answer = '');
               this.selectedContent.showQuestions = true;
             } else {
               this.selectedContent.showQuestions = false;
@@ -107,6 +111,7 @@ export class ViewFullCourseComponent implements OnInit {
           }
         }, 
         error: (err: any) => {
+          this.notification.showNotification('somthing went wrong',1000,'danger');
           console.error('Error fetching questions:', err);
         }
       });
@@ -132,7 +137,64 @@ export class ViewFullCourseComponent implements OnInit {
   }
 
   onSubmitQuiz() {
-    console.log('Quiz submitted');
+    if (this.selectedContent?.questions) {
+      for (const q of this.selectedContent?.questions) { //submit all answers
+        this.http.post(`http://localhost/backend/api.php/questions/${q.id}/answer`,{answer:q.student_answer})
+        .subscribe({
+          next: response => {
+            this.notification.showNotification('your answer has been submitted successfully',1000, 'success');
+          },
+          error: err => {
+            if (err.status === 200) { // if answer already exists an erro is returned but the satus code is 200 indicating that the request is processed successfully
+              // if answer already exists update it
+              this.http.put<any>(`http://localhost/backend/api.php/questions/${q.id}/answer`,{answer:q.student_answer})
+              .subscribe({
+                next: response => {
+                  this.notification.showNotification('your answer has been updated successfully',1000, 'success');
+                },
+                error: err => {
+                  this.notification.showNotification('somthing went wrong',1000,'danger');
+                  console.error('error updating answer: ', err);
+                }
+              });
+            } else {
+              this.notification.showNotification('somthing went wrong',1000,'danger');
+              console.error('error submitting answer: ', err);
+            }
+          }
+        });
+      }
+    }
+  }
+
+
+  onSubmitProject() {
+    if (this.selectedContent && this.selectedContent.project_url) {
+      this.http.post(`http://localhost/backend/api.php/submissions`,{project: this.selectedContent?.id, url:this.selectedContent?.project_url})
+      .subscribe({
+        next: response => {
+          this.notification.showNotification('your project has been submitted successfully',1000, 'success');
+        },
+        error: err => {
+          if (err.status === 200) { // if answer already exists an erro is returned but the satus code is 200 indicating that the request is processed successfully
+            // if answer already exists update it
+            this.http.put<any>(`http://localhost/backend/api.php/submissions/${this.selectedContent?.id}`,{url:this.selectedContent?.project_url})
+            .subscribe({
+              next: response => {
+                this.notification.showNotification('your project has been updated successfully',1000, 'success');
+              },
+              error: err => {
+                this.notification.showNotification('somthing went wrong',1000,'danger');
+                console.error('error updating project: ', err);
+              }
+            });
+          } else {
+            this.notification.showNotification('somthing went wrong',1000,'danger');
+            console.error('error submitting project: ', err);
+          }
+        }
+      });
+    }
   }
 
 }

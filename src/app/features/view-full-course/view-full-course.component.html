@@ -52,12 +52,12 @@
         </h5>
         <p class="text-muted mb-3">{{ selectedContent.description }}</p>
 
-        <form *ngIf="selectedContent && selectedContent.type === 'project' " (ngSubmit)="onSubmitQuiz()">
+        <form *ngIf="selectedContent && selectedContent.type === 'project' " (ngSubmit)="onSubmitProject()">
           <div class="form-group m-4">
-              <label for="project" class="fw-semibold mb-2">upload files</label>
-              <input type="file" class="form-control" id="project">
+              <label for="project" class="fw-semibold mb-2">provide your project link (e. g. github, google drive, dropbox, ...etc)</label>
+              <input type="link" class="form-control" id="project" name="project" placeholder="project url" [(ngModel)]="selectedContent.project_url">
             </div>
-            <button type="submit" class="btn btn-primary">upload</button>
+            <button type="submit" class="btn btn-primary">save</button>
         </form>
 
       </div>
@@ -70,8 +70,8 @@
         <p class="text-muted mb-3">{{ selectedContent.description }}</p>
         <form *ngIf="selectedContent.showQuestions" (ngSubmit)="onSubmitQuiz()">
           <div class="form-group m-4" *ngFor="let q of selectedContent.questions">
-              <div class="fw-semibold mb-2">{{ q.head }}</div>
-              <input type="text" class="form-control" placeholder="Your answer here">
+              <label [for]="'question_'+q.id" class="fw-semibold mb-2">{{ q.head }}</label>
+              <input type="text" [name]="'question_'+q.id" class="form-control" placeholder="Your answer here" [(ngModel)]="q.student_answer">
             </div>
             <button type="submit" class="btn btn-primary">save</button>
         </form>

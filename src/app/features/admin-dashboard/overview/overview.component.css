@@ -1,0 +1,17 @@
+.wrapper {
+    width: 90% !important;
+}
+
+.number {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+.rounded-circle {
+    width: 150px;
+    height: 150px;
+}
+
+.categories {
+    width: 80% !important;
+}

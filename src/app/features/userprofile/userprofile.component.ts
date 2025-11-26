@@ -35,6 +35,7 @@ export class UserprofileComponent {
         this.bio=data.bio;
       },
       error: (err) => {
+        this.notification.showNotification('somthing went wrong',1000,'danger');
         console.error('Error fetching user profile:', err);
         this.router.navigate(['/home']);
       }
@@ -46,17 +47,18 @@ export class UserprofileComponent {
       this.http.delete(`http://localhost/backend/api.php/users/${this.id}`)
       .subscribe({
         next: () => {
-          console.log('Account deleted successfully');
           window.localStorage.removeItem('token');
           this.authService.logout();
           this.notification.showNotification('Your account has been deleted', 1000, 'success');
           this.router.navigate(['/home']);
         },
         error: (err) => {
+          this.notification.showNotification('somthing went wrong',1000,'danger');
           console.error('Error deleting account:', err);
         }
       });
     } else {
+      this.notification.showNotification('somthing went wrong',1000,'danger');
       console.error('User ID is not available.');
     }
   }

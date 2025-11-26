@@ -14,6 +14,7 @@ import { Notification } from '../../../services/notifications.service';
 })
 export class InstructorCoursesComponent implements OnInit{
   http = inject(HttpClient);
+  notification = inject(Notification);
   authService = inject(AuthService);
   notificaion = inject(Notification);
   courses:{id:number,name:string,description:string,thumbnail:string,price:number,author:number,category:string,instructor_first_name:string,instructor_last_name:string, subscriptions:any[]}[] = [];
@@ -30,13 +31,15 @@ export class InstructorCoursesComponent implements OnInit{
               course.subscriptions = response;
             },
             error: err => {
-              console.log(`Error fetching course ${course.name} subscriptions:`,err);
+              this.notification.showNotification('somthing went wrong',1000,'danger');
+              console.error(`Error fetching course ${course.name} subscriptions:`,err);
             }
           });
         }
       },
       error: err => {
-        console.log('Error fetching instructor courses: ',err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('Error fetching instructor courses: ',err);
       }
     });
   }
@@ -45,12 +48,12 @@ export class InstructorCoursesComponent implements OnInit{
     this.http.delete(`http://localhost/backend/api.php/courses/${id}`)
     .subscribe({
       next: response => {
-        console.log(response);
         this.notificaion.showNotification('course deleted', 1000, 'success');
         this.ngOnInit();
       },
       error: err => {
-        console.log('Error deleting course:', err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('Error deleting course:', err);
       }
     });
   }

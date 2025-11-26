@@ -1,0 +1,11 @@
+.wrapper {
+    max-width: 95%;
+}
+
+table input, table textarea{
+    max-width: 200px;
+}
+
+table input.names {
+    max-width: 100px;
+}

@@ -1,40 +1,42 @@
-<div class="row g-4">
-    <div class="col-lg-3 pt-3">
-        <button [ngClass]="{'open': sidebarOpen}" class="sidebar-toggle btn d-lg-none" (click)="toggleSidebar()"><i class="fa-solid fa-chevron-right"></i></button>
-        <div class="d-lg-block h-100" [ngClass]="{open:sidebarOpen}" id="sidebar">
-            <nav class="sidebar position-fixed d-flex justify-content-start flex-column p-4 h-100">
-                <div class="sidebar-header">
-                    <h3 class="text-capitalize text-white">admin dashboard</h3>
-                </div>
-                <div class="sidebar-content d-flex flex-column justify-content-start mt-5 mb-5">
-                    <ul class="list-group">
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active" 
-                            [routerLinkActiveOptions]="{ exact: true }">
-                            <a routerLink="/admin">
-                                <i class="fa-regular fa-eye"></i>
-                                overview
-                            </a>
-                        </li>
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
-                            [routerLinkActiveOptions]="{exact: true}">
-                            <a routerLink="/admin/accounts">
-                                <i class="fa-solid fa-user"></i>
-                                accounts
-                            </a>
-                        </li>
-                        <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
-                            [routerLinkActiveOptions]="{exact: true}">
-                            <a routerLink="/admin/subscriptions">
-                                <i class="fa-solid fa-link"></i>
-                                subscriptions
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+<div class="dashboard-wrapper">
+    <div class="row g-4">
+        <div class="col-lg-3 pt-3">
+            <button [ngClass]="{'open': sidebarOpen}" class="sidebar-toggle btn d-lg-none" (click)="toggleSidebar()"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="d-lg-block h-100" [ngClass]="{open:sidebarOpen}" id="sidebar">
+                <nav class="sidebar position-fixed d-flex justify-content-start flex-column p-4 h-100">
+                    <div class="sidebar-header">
+                        <h3 class="text-capitalize text-white">admin dashboard</h3>
+                    </div>
+                    <div class="sidebar-content d-flex flex-column justify-content-start mt-5 mb-5">
+                        <ul class="list-group">
+                            <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active" 
+                                [routerLinkActiveOptions]="{ exact: true }">
+                                <a routerLink="/admin">
+                                    <i class="fa-regular fa-eye"></i>
+                                    overview
+                                </a>
+                            </li>
+                            <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
+                                [routerLinkActiveOptions]="{exact: true}">
+                                <a routerLink="/admin/accounts">
+                                    <i class="fa-solid fa-user"></i>
+                                    accounts
+                                </a>
+                            </li>
+                            <li class="list-group-item text-capitalize" routerLinkActive="sidebar-link-active"
+                                [routerLinkActiveOptions]="{exact: true}">
+                                <a routerLink="/admin/courses">
+                                    <i class="fa-solid fa-chalkboard"></i>
+                                    courses
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
         </div>
-    </div>
-    <div class="col-lg-9 p-5 pe-0">
-        <router-outlet></router-outlet>
+        <div class="col-lg-9 p-5 content-wrapper">
+            <router-outlet></router-outlet>
+        </div>
     </div>
 </div>

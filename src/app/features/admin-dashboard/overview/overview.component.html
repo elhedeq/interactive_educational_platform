@@ -1,1 +1,41 @@
-<p>overview works!</p>
+<div class="wrapper">
+    <div class="d-flex justify-content-between">
+        <div class="d-flex flex-column rounded-circle border bg-secondary text-white align-items-center justify-content-center">
+            <p class="number">{{users.length}}</p>
+            <p class="unit">users</p>
+        </div>
+        <div class="d-flex flex-column rounded-circle border bg-secondary text-white align-items-center justify-content-center">
+            <p class="number">{{getTotalStudents()}}</p>
+            <p class="unit">students</p>
+        </div>
+        <div class="d-flex flex-column rounded-circle border bg-secondary text-white align-items-center justify-content-center">
+            <p class="number">{{getTotalInstructors()}}</p>
+            <p class="unit">instructors</p>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <div class="d-flex justify-content-center">
+        <div class="d-flex flex-column rounded-circle border bg-secondary text-white align-items-center justify-content-center">
+            <p class="number">{{courses.length}}</p>
+            <p class="unit">courses</p>
+        </div>
+        <div class="w-50"></div>
+        <div class="d-flex flex-column rounded-circle border bg-secondary text-white align-items-center justify-content-center">
+            <p class="number">{{categories.size}}</p>
+            <p class="unit">categories</p>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center pt-5">
+        <div class="categories row rounded-4 shadow-sm">
+            <div class="col-6 col-md-3" *ngFor="let cat of categories">
+                <div class="category-card text-center p-4 rounded-4 shadow-sm">
+                    <h5 class="fw-bold">{{ cat }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>

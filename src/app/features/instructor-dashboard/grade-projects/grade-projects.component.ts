@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Notification } from '../../../services/notifications.service';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { response } from 'express';
+
 
 @Component({
   selector: 'app-grade-projects',
@@ -32,15 +32,16 @@ export class GradeProjectsComponent implements OnInit{
         .subscribe({
           next: response => {
             this.submissions = response;
-            console.log(this.submissions);
           },
           error: err => {
-            console.log('error fetching submissions: ',err);
+            this.notification.showNotification('somthing went wrong',1000,'danger');
+            console.error('error fetching submissions: ',err);
           }
         });
       },
       error: err => {
-        console.log('error fetching project: ',err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('error fetching project: ',err);
       }
     });
   }
@@ -55,11 +56,11 @@ export class GradeProjectsComponent implements OnInit{
     this.http.put(`http://localhost/backend/api.php/submissions/${this.project.id}`,data)
     .subscribe({
       next: response => {
-        console.log('submitted grade ', response);
         this.notification.showNotification(`submitted grade for student ${sub.first_name + ' ' + sub.last_name}`, 1000, 'success');
       },
       error: err => {
-        console.log('error submitting grade ', err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('error submitting grade ', err);
       }
     });
   }

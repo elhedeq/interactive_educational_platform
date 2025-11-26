@@ -34,13 +34,15 @@ export class GradeQuizzesComponent implements OnInit{
               quiz.questions = response;
             },
             error: err => {
-              console.log('error fetching questions answers: ',err);
+              this.notification.showNotification('somthing went wrong',1000,'danger');
+              console.error('error fetching questions answers: ',err);
             }
           });
         }
       },
       error: err => {
-        console.log('error fetching quizzes: ', err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('error fetching quizzes: ', err);
       }
     });
   }
@@ -59,21 +61,10 @@ export class GradeQuizzesComponent implements OnInit{
         this.notification.showNotification(`submitted grade successfully`, 1000, 'success');
       },
       error: err => {
-        console.log('error submitting grade: ',err);
+        this.notification.showNotification('somthing went wrong',1000,'danger');
+        console.error('error submitting grade: ',err);
       }
     });
-  }
-
-  collapseQuiz(event:any) {
-    let q = document.getElementById('quiz')
-    if (q) {
-      if (q.style.height === '100px') {
-        console.log(q.style.height);
-        q.style.height = 'auto';
-      }
-      q.style.height = '100px';
-      event.target.style.transform = 'rotate(180deg)';
-    }
   }
   
   collapseQuestion(event:any) {

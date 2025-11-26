@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Notification } from '../../services/notifications.service';
 
 @Component({
   selector: 'app-checkout',
@@ -16,6 +17,8 @@ export class CheckoutComponent implements OnInit {
   courseId!: number;
   summary: any = [];
   http = inject(HttpClient);
+  notification = inject(Notification);
+
   discount = 1;
   tax = 4.20;
   
@@ -30,6 +33,7 @@ export class CheckoutComponent implements OnInit {
         this.summary = data;
       },
       error: (err) => {
+        this.notification.showNotification('somthing went wrong',1000,'danger');
         console.error('Error fetching course summary:', err);
       }
     })
@@ -40,15 +44,15 @@ export class CheckoutComponent implements OnInit {
   }
 
   confirmPayment() {
-    console.log('Payment Confirmed!');
+    this.notification.showNotification('Payment Confirmed!',1000, 'success');
     // Navigate to View Full Course page
     this.http.post(`http://localhost/backend/api.php/subscriptions`, {"course": this.courseId})
     .subscribe({
       next: (data) => {
-        console.log('Subscription successful:', data);
         this.router.navigate(['/view-full-course', this.courseId]);
       },
       error: (err) => {
+        this.notification.showNotification('somthing went wrong',1000,'danger');
         console.error('Error during subscription:', err);
       }
     });

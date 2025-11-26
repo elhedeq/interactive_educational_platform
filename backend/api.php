@@ -761,7 +761,7 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE']) && getRouteP
 
     $isAuthor = ($authUser['id'] == $parent['author']);
     $isAdmin = ($authUser['credential'] == 2);
-    $isEnrolled = $subscriptionService->getSubscription($authUser['id'], $parent['name']);
+    $isEnrolled = $subscriptionService->getSubscription($authUser['id'], $parent['id']);
 
     // Check if the user is authorized to interact with this question
     if (!$isAdmin && !$isAuthor && !$isEnrolled) {
@@ -970,7 +970,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $endpoint === 'submissions') {
     if (!$parent) { http_response_code(404); echo json_encode(['error' => 'Project not found.']); exit(); }
 
     // Rule: Must be an enrolled student to submit to a project
-    if (!$subscriptionService->getSubscription($authUser['id'], $parent['course'])) {
+    if (!$subscriptionService->getSubscription($authUser['id'], $parent['id'])) {
         http_response_code(403);
         echo json_encode(['error' => 'Access denied. You must be enrolled in the course to submit this project.']);
         exit();
@@ -1028,7 +1028,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT' && $endpoint === 'submissions' && getRo
     if ($result > 0) {
         http_response_code(200);
         echo json_encode(['message' => 'Submission updated successfully.']);
-    } else {
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+        http_response_code(200); 
+        echo json_encode(['message' => 'No changes made to answer.']);
+    }else {
         http_response_code(404);
         echo json_encode(['error' => 'Submission not found or no changes made.']);
     }

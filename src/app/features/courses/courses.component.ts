@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router'; 
+import { ActivatedRoute, RouterModule } from '@angular/router'; 
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Notification } from '../../services/notifications.service';
 
 @Component({
   selector: 'app-courses',
@@ -12,13 +13,21 @@ import { inject } from '@angular/core';
   styleUrls: ['./courses.component.css']
 })
 export class CoursesComponent implements OnInit{
+  http = inject(HttpClient);
+  notification = inject(Notification)
+  
+  admin:boolean = false;
+
   categories: Set<string>=new Set<string>();
   selectedCategory: string = '';
-  http = inject(HttpClient);
 
   courses:{id:number,name:string,description:string,thumbnail:string,price:number,author:number,category:string,instructor_first_name:string,instructor_last_name:string}[] = [];
+  constructor(private route: ActivatedRoute) {  }
 
   ngOnInit(): void {
+    if (this.route.snapshot.data['role'] === 'admin') {
+      this.admin = true;
+    }
     this.http.get<any[]>('http://localhost/backend/api.php/courses')
     .subscribe({
       next: (data) => {
@@ -26,6 +35,7 @@ export class CoursesComponent implements OnInit{
         this.categories = new Set(data.map(c => c.category));
       },
       error: (err) => {
+        this.notification.showNotification('somthing went wrong',1000,'danger');
         console.error('Error fetching courses:', err);
       }
     })
@@ -51,4 +61,21 @@ export class CoursesComponent implements OnInit{
   showMoreCourses() {
     // ممكن نعملها بعدين لما نضيف pagination أو lazy loading
   }
+
+  deleteCourse(id:number) {
+    if (this.admin) {
+      this.http.delete(`http://localhost/backend/api.php/courses/${id}`)
+      .subscribe({
+        next: response => {
+          this.notification.showNotification('deleted course successfully!', 1000, 'success');
+          this.ngOnInit();
+        },
+        error: err => {
+          this.notification.showNotification('somthing went wrong',1000,'danger');
+          console.error('error deleting course: ',err);
+        }
+      });
+    }
+  }
+
 }

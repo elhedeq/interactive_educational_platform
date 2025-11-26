@@ -48,7 +48,6 @@ export class CreateCourseComponent implements OnInit {
     this.http.get<any>(`http://localhost/backend/api.php/courses/${this.id}`)
     .subscribe({
       next: response=> {
-        console.log(`got course ${this.id} data: `,response);
         this.operation = 'edit';
         this.name = response.name;
         this.description = response.description;
@@ -69,7 +68,8 @@ export class CreateCourseComponent implements OnInit {
               quiz.questions = response;
             },
             error: err => {
-              console.log('error getting quiz questions: ', err);
+              this.notification.showNotification('somthing went wrong',1000,'danger');
+              console.error('error getting quiz questions: ', err);
             }
           });
         }
@@ -97,7 +97,7 @@ export class CreateCourseComponent implements OnInit {
           this.switchForm(2); //show lessons form
         },
         error: err => {
-          console.log('error creating course:',err);
+          console.error('error creating course:',err);
           this.notification.showNotification("sorry couldn't create course!", 1000, 'danger');
         }
       });
@@ -107,10 +107,9 @@ export class CreateCourseComponent implements OnInit {
         next: response =>{
           this.notification.showNotification(`updated course ${this.name}`, 1000, 'success');
           this.switchForm(2); //show lessons form
-          console.log(response);
         },
         error: err => {
-          console.log('error updating course:',err);
+          console.error('error updating course:',err);
           this.notification.showNotification("sorry couldn't update course!", 1000, 'danger');
         }
       });
@@ -122,7 +121,6 @@ export class CreateCourseComponent implements OnInit {
     lesson.course = this.id;
     
     if (!lesson.id) {
-      console.log('saving lessons', lesson);
       this.http.post<any>(`http://localhost/backend/api.php/courses/${this.id}/lessons`, lesson)
       .subscribe({
         next: response =>{
@@ -137,7 +135,7 @@ export class CreateCourseComponent implements OnInit {
           }
         },
         error: err => {
-          console.log('error creating lesson:',err);
+          console.error('error creating lesson:',err);
           this.notification.showNotification("sorry couldn't create lesson!", 1000, 'danger');
         }
       });
@@ -145,10 +143,10 @@ export class CreateCourseComponent implements OnInit {
       this.http.put<any>(`http://localhost/backend/api.php/courses/${this.id}/lessons/${lesson.id}`, lesson)
       .subscribe({
         next: response =>{
-          console.log(response);
+          this.notification.showNotification(`updated lesson ${lesson.title}`, 1000, 'success');
         },
         error: err => {
-          console.log('error updating course:',err);
+          console.error('error updating course:',err);
           this.notification.showNotification("sorry couldn't update lesson!", 1000, 'danger');
         }
       });
@@ -175,7 +173,7 @@ export class CreateCourseComponent implements OnInit {
             }
           },
           error: err => {
-            console.log('Error creating quiz:', err);
+            console.error('Error creating quiz:', err);
             this.notification.showNotification("Sorry, couldn't create quiz!", 1000, 'danger');
           }
         });
@@ -183,11 +181,11 @@ export class CreateCourseComponent implements OnInit {
       this.http.put<any>(`http://localhost/backend/api.php/courses/${this.id}/quizzes/${quiz.id}`, quiz)
         .subscribe({
           next: response => {
-            console.log('Quiz updated:', response);
+          this.notification.showNotification(`updated quiz ${quiz.name}`, 1000, 'success');
             this.saveQuestions(quiz);
           },
           error: err => {
-            console.log('Error updating quiz:', err);
+            console.error('Error updating quiz:', err);
             this.notification.showNotification("Sorry, couldn't update quiz!", 1000, 'danger');
           }
         });
@@ -205,7 +203,10 @@ export class CreateCourseComponent implements OnInit {
             this.http.post<any>(`http://localhost/backend/api.php/quizzes/${quiz.id}/questions`, question)
             .subscribe({
               next: res => console.log('Question saved:', res),
-              error: err => console.log('Error saving question:', err)
+              error: err => {
+                this.notification.showNotification('somthing went wrong',1000,'danger');
+                console.error('Error saving question:', err)
+              }
             });
         } else {
              // Optional: Add PUT logic here if you want to update existing questions
@@ -225,11 +226,10 @@ export class CreateCourseComponent implements OnInit {
       .subscribe({
         next: response =>{
           this.notification.showNotification(`completed creating course successfuly!`, 1000, 'success');
-          console.log(response);
           this.router.navigate([`/view-full-course/${this.id}`]);
         },
         error: err => {
-          console.log('error creating project:',err);
+          console.error('error creating project:',err);
           this.notification.showNotification("sorry couldn't create project!", 1000, 'danger');
         }
       });
@@ -237,12 +237,11 @@ export class CreateCourseComponent implements OnInit {
       this.http.put<any>(`http://localhost/backend/api.php/courses/${this.id}/project/${project.id}`, project)
       .subscribe({
         next: response =>{
-          this.notification.showNotification(`completed creating course successfuly!`, 1000, 'success');
-          console.log(response);
+          this.notification.showNotification(`completed updating course successfuly!`, 1000, 'success');
           this.router.navigate([`/view-full-course/${this.id}`]);
         },
         error: err => {
-          console.log('error updating project:',err);
+          console.error('error updating project:',err);
           this.notification.showNotification("sorry couldn't update project!", 1000, 'danger');
         }
       });
@@ -268,13 +267,12 @@ export class CreateCourseComponent implements OnInit {
       this.http.delete<any>(`http://localhost/backend/api.php/courses/${this.id}/lessons/${lesson.id}`)
         .subscribe({
           next: response => {
-            console.log(response);
             this.notification.showNotification(`Removed lesson`, 1000, 'success');
             this.lessons.splice(index, 1);
           },
           error: err => {
             this.notification.showNotification(`Could not delete lesson from database.`, 1000, 'danger');
-            console.log('Error removing lesson', err);
+            console.error('Error removing lesson', err);
           }
         });
     } else {
@@ -301,12 +299,11 @@ export class CreateCourseComponent implements OnInit {
       this.http.delete<any>(`http://localhost/backend/api.php/courses/${this.id}/quizzes/${quiz.id}`)
         .subscribe({
           next: response => {
-            console.log(response);
             this.notification.showNotification(`Removed quiz`, 1000, 'success');
             this.quizzes.splice(index, 1); // Remove from array after DB success
           },
           error: err => {
-            console.log('Error removing quiz', err);
+            console.error('Error removing quiz', err);
             this.notification.showNotification(`Could not delete quiz from database.`, 1000, 'danger');
           }
         });
@@ -327,7 +324,8 @@ export class CreateCourseComponent implements OnInit {
         quiz: this.quizzes[index].id
       });
     } else {
-      console.log('error generating form');
+      this.notification.showNotification('somthing went wrong',1000,'danger');
+      console.error('error generating form');
     }
   }
 
@@ -344,7 +342,10 @@ export class CreateCourseComponent implements OnInit {
          next: () => {
            quiz.questions.splice(questionIndex, 1);
          },
-         error: (err) => console.log("Error deleting question", err)
+         error: (err) => {
+          this.notification.showNotification('somthing went wrong',1000,'danger');
+          console.error("Error deleting question", err)
+        }
        })
     } else {
       // Local removal only
