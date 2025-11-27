@@ -46,3 +46,7 @@
   background-color: none;
 
 }
+.active{
+ border-radius: 8px;
+  outline: 1px solid #145DB8;
+}
