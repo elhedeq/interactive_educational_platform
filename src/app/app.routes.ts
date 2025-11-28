@@ -24,11 +24,13 @@ import { GradeProjectsComponent } from './features/instructor-dashboard/grade-pr
 import { OverviewComponent } from './features/admin-dashboard/overview/overview.component';
 import { AccountsComponent } from './features/admin-dashboard/accounts/accounts.component';
 import { AdminDashboardComponent } from './features/admin-dashboard/admin-dashboard.component';
+import { AboutComponent } from './features/about/about.component';
 
 export const routes: Routes = [
   { path: "", redirectTo: "home", pathMatch: "full" },
 
   { path: "home", component: HomeComponent },
+  {path:"about",component:AboutComponent },
   { path: "courses", component: CoursesComponent },
   { path: "course-details/:id", component: CourseDetailsComponent },
 
@@ -68,6 +70,8 @@ export const routes: Routes = [
     component: UserprofileComponent,
     canActivate: [AuthGuard],
     children: [
+      { path: "", component: UserinformationComponent,pathMatch:"full" },
+
       { path: "personal-info", component: UserinformationComponent },
       { path: "mycourses", component: UsercoursesComponent }
     ]

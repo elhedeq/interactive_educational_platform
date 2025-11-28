@@ -1,5 +1,6 @@
 <div *ngFor="let course of courses">
     <div class="card m-3">
+      <img [src]="course.thumbnail" alt="">
         <div class="card-body">
             <h5 class="card-title">{{ course.name }}</h5>
             <p class="card-text">{{ course.description }}</p>
