@@ -37,7 +37,7 @@ export class AppComponent implements OnInit {
       )
       .subscribe(() => {
         const currentUrl = this.router.routerState.root.firstChild?.snapshot.url[0]?.path;
-        this.showFooter = !(currentUrl === 'login' || currentUrl === 'signup' || currentUrl === 'instructor');
+        this.showFooter = !(currentUrl === 'login' || currentUrl === 'signup' || currentUrl === 'instructor' || currentUrl === 'admin' || currentUrl === 'userprofile');
       });
   }
 

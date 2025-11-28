@@ -2,7 +2,8 @@
   background-color: #F5F6F7;
   border-radius: 13px;
   padding: 32px;
-
+  position: fixed;
+  top: 20%;
 }
 
 .user-info img{
